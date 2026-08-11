@@ -67,7 +67,7 @@ CREATE TABLE habit_entries (
     id UUID PRIMARY KEY,
     habit_id UUID NOT NULL,
     entry_date DATE NOT NULL,
-    value NUMERIC(12,2) NOT NULL CHECK (value >= 0),
+    progress_value NUMERIC(12,2) NOT NULL CHECK (progress_value >= 0),
     note VARCHAR(1000),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL,

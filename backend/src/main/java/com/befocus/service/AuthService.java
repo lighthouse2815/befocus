@@ -86,7 +86,7 @@ public class AuthService {
                 .orElseThrow(() -> ApiException.unauthorized("Refresh token is invalid."));
         if (!current.isActive(now)) {
             if (current.getRevokedAt() != null && current.getReplacedByHash() != null) {
-                refreshTokenRepository.revokeFamily(current.getFamilyId());
+                refreshTokenRepository.revokeFamily(current.getFamilyId(), now);
             }
             throw ApiException.unauthorized("Refresh token is invalid or expired.");
         }

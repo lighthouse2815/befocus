@@ -28,7 +28,7 @@ public class HabitEntry extends BaseEntity {
     @Column(name = "entry_date", nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "progress_value", nullable = false, precision = 12, scale = 2)
     private BigDecimal value;
 
     @Column(length = 1000)

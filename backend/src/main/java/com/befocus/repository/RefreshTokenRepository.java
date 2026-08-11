@@ -1,5 +1,6 @@
 package com.befocus.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +16,6 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     List<RefreshToken> findAllByFamilyIdAndRevokedAtIsNull(UUID familyId);
 
     @Modifying
-    @Query("update RefreshToken r set r.revokedAt = CURRENT_TIMESTAMP where r.familyId = :familyId and r.revokedAt is null")
-    int revokeFamily(UUID familyId);
+    @Query("update RefreshToken r set r.revokedAt = :revokedAt where r.familyId = :familyId and r.revokedAt is null")
+    int revokeFamily(UUID familyId, Instant revokedAt);
 }
