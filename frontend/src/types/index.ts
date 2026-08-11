@@ -120,26 +120,28 @@ export type InterruptionKind = 'PHONE' | 'MESSAGE' | 'NOISE' | 'MEETING' | 'OTHE
 export interface FocusSession {
   id: string
   plannedDurationMinutes: number
-  actualDurationMinutes?: number | null
-  projectId?: string | null
-  projectName?: string | null
-  taskId?: string | null
-  taskTitle?: string | null
-  habitId?: string | null
-  habitName?: string | null
+  actualDurationMinutes: number | null
+  projectId: string | null
+  projectName: string | null
+  taskId: string | null
+  taskTitle: string | null
+  habitId: string | null
+  habitName: string | null
   status: FocusStatus
   startedAt: string
   expectedEndAt: string
-  pausedAt?: string | null
-  totalPausedSeconds?: number
-  interruptions?: FocusInterruption[]
+  pausedAt: string | null
+  totalPausedSeconds: number
+  completedAt: string | null
+  cancelledAt: string | null
+  interruptions: FocusInterruption[]
 }
 
 export interface FocusInterruption {
   id: string
   kind: InterruptionKind
-  note?: string | null
-  createdAt?: string
+  note: string | null
+  occurredAt: string
 }
 
 export interface FocusStartPayload {

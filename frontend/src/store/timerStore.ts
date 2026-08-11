@@ -8,9 +8,11 @@ interface TimerState {
   phase: 'READY' | 'FOCUS' | 'SHORT_BREAK' | 'LONG_BREAK'
   breakExpectedEndAt: string | null
   completedFocusCount: number
+  lastCompletedSessionId: string | null
   hydrated: boolean
   setSession: (session: FocusSession | null) => void
   startBreak: (kind: 'SHORT_BREAK' | 'LONG_BREAK', durationMinutes: number, completedFocusCount: number) => void
+  completeFocus: (sessionId: string, shortMinutes?: number, longMinutes?: number, sessionsBeforeLongBreak?: number) => void
   finishBreak: () => void
   clear: () => void
   hydrate: () => void
@@ -21,21 +23,42 @@ interface StoredTimer {
   phase: TimerState['phase']
   breakExpectedEndAt: string | null
   completedFocusCount: number
+  lastCompletedSessionId: string | null
 }
 
 function persist(value: StoredTimer) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
+  } catch {
+    // The server remains authoritative when browser storage is unavailable.
+  }
 }
+
+const emptyTimer = (): StoredTimer => ({
+  session: null,
+  phase: 'READY',
+  breakExpectedEndAt: null,
+  completedFocusCount: 0,
+  lastCompletedSessionId: null,
+})
 
 function read(): StoredTimer {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { session: null, phase: 'READY', breakExpectedEndAt: null, completedFocusCount: 0 }
+    if (!raw) return emptyTimer()
     const parsed = JSON.parse(raw) as StoredTimer | FocusSession
-    if ('session' in parsed) return parsed
-    return { session: parsed, phase: 'FOCUS', breakExpectedEndAt: null, completedFocusCount: 0 }
+    if ('session' in parsed) {
+      return {
+        session: parsed.session ?? null,
+        phase: parsed.phase ?? (parsed.session ? 'FOCUS' : 'READY'),
+        breakExpectedEndAt: parsed.breakExpectedEndAt ?? null,
+        completedFocusCount: Number.isFinite(parsed.completedFocusCount) ? parsed.completedFocusCount : 0,
+        lastCompletedSessionId: parsed.lastCompletedSessionId ?? null,
+      }
+    }
+    return { ...emptyTimer(), session: parsed, phase: 'FOCUS' }
   } catch {
-    return { session: null, phase: 'READY', breakExpectedEndAt: null, completedFocusCount: 0 }
+    return emptyTimer()
   }
 }
 
@@ -44,27 +67,63 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   phase: 'READY',
   breakExpectedEndAt: null,
   completedFocusCount: 0,
+  lastCompletedSessionId: null,
   hydrated: false,
   setSession: (session) => {
     const current = get()
     const phase: TimerState['phase'] = session ? 'FOCUS' : current.phase === 'FOCUS' ? 'READY' : current.phase
-    const next: StoredTimer = { session, phase, breakExpectedEndAt: current.breakExpectedEndAt, completedFocusCount: current.completedFocusCount }
+    const next: StoredTimer = {
+      session,
+      phase,
+      breakExpectedEndAt: current.breakExpectedEndAt,
+      completedFocusCount: current.completedFocusCount,
+      lastCompletedSessionId: current.lastCompletedSessionId,
+    }
     persist(next)
     set({ ...next, hydrated: true })
   },
   startBreak: (kind, durationMinutes, completedFocusCount) => {
-    const next: StoredTimer = { session: null, phase: kind, breakExpectedEndAt: new Date(Date.now() + durationMinutes * 60_000).toISOString(), completedFocusCount }
+    const current = get()
+    const next: StoredTimer = {
+      session: null,
+      phase: kind,
+      breakExpectedEndAt: new Date(Date.now() + durationMinutes * 60_000).toISOString(),
+      completedFocusCount,
+      lastCompletedSessionId: current.lastCompletedSessionId,
+    }
+    persist(next)
+    set({ ...next, hydrated: true })
+  },
+  completeFocus: (sessionId, shortMinutes = 5, longMinutes = 15, sessionsBeforeLongBreak = 4) => {
+    const current = get()
+    if (current.lastCompletedSessionId === sessionId) return
+    const completedFocusCount = current.completedFocusCount + 1
+    const longBreak = completedFocusCount % sessionsBeforeLongBreak === 0
+    const durationMinutes = longBreak ? longMinutes : shortMinutes
+    const next: StoredTimer = {
+      session: null,
+      phase: longBreak ? 'LONG_BREAK' : 'SHORT_BREAK',
+      breakExpectedEndAt: new Date(Date.now() + durationMinutes * 60_000).toISOString(),
+      completedFocusCount,
+      lastCompletedSessionId: sessionId,
+    }
     persist(next)
     set({ ...next, hydrated: true })
   },
   finishBreak: () => {
     const current = get()
-    const next = { session: null, phase: 'READY' as const, breakExpectedEndAt: null, completedFocusCount: current.completedFocusCount }
+    const next = {
+      session: null,
+      phase: 'READY' as const,
+      breakExpectedEndAt: null,
+      completedFocusCount: current.completedFocusCount,
+      lastCompletedSessionId: current.lastCompletedSessionId,
+    }
     persist(next)
     set({ ...next, hydrated: true })
   },
   clear: () => {
-    const next = { session: null, phase: 'READY' as const, breakExpectedEndAt: null, completedFocusCount: 0 }
+    const next = emptyTimer()
     persist(next)
     set({ ...next, hydrated: true })
   },

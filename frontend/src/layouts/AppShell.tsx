@@ -1,21 +1,24 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, CircleDot, LogOut, Menu, X } from 'lucide-react'
+import { CheckCircle2, CircleDot, LogOut, Menu, TimerReset, X } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { Logo } from '../components/Logo'
 import { Button } from '../components/ui'
+import { FocusSessionSync } from '../components/FocusSessionSync'
 import { authService } from '../services/auth'
 import { useAuthStore } from '../store/authStore'
+import { useTimerStore } from '../store/timerStore'
 
 const navItems = [
   { to: '/', label: 'Hôm nay', icon: CircleDot, end: true },
   { to: '/habits', label: 'Thói quen', icon: CheckCircle2 },
+  { to: '/focus', label: 'Tập trung', icon: TimerReset },
 ]
 
 function NavItems({ onNavigate, mobile = false }: { onNavigate?: () => void; mobile?: boolean }) {
   return (
-    <nav aria-label="Điều hướng chính" className={mobile ? 'grid grid-cols-2' : 'space-y-1'}>
+    <nav aria-label="Điều hướng chính" className={mobile ? 'grid grid-cols-3' : 'space-y-1'}>
       {navItems.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
@@ -49,6 +52,7 @@ export function AppShell() {
       if (refreshToken) await authService.logout(refreshToken)
     },
     onSettled: () => {
+      useTimerStore.getState().clear()
       clearSession()
       queryClient.clear()
       navigate('/login', { replace: true })
@@ -57,6 +61,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen md:pl-[232px]">
+      <FocusSessionSync />
       <a
         href="#main-content"
         className="fixed left-3 top-3 z-[100] -translate-y-20 rounded-control bg-ink px-4 py-2 text-sm font-semibold text-paper transition-transform focus:translate-y-0"

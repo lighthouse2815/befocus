@@ -6,10 +6,19 @@ import type {
   InterruptionKind,
 } from '../types'
 
-export const focusKeys = { active: ['focus-sessions', 'active'] as const }
+export const focusKeys = {
+  all: ['focus-sessions'] as const,
+  active: ['focus-sessions', 'active'] as const,
+  recent: (limit = 10) => ['focus-sessions', 'recent', limit] as const,
+}
 
 export const focusService = {
-  active: async () => (await api.get<FocusSession | null>('/focus-sessions/active')).data,
+  active: async () => {
+    const response = await api.get<FocusSession | null>('/focus-sessions/active')
+    return response.status === 204 || !response.data ? null : response.data
+  },
+  recent: async (limit = 10) =>
+    (await api.get<FocusSession[]>('/focus-sessions', { params: { limit } })).data,
   start: async (payload: FocusStartPayload) =>
     (await api.post<FocusSession>('/focus-sessions', payload)).data,
   pause: async (id: string) =>

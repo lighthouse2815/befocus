@@ -5,14 +5,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import com.befocus.entity.FocusSession;
 import com.befocus.entity.FocusStatus;
 
+import jakarta.persistence.LockModeType;
+
 public interface FocusSessionRepository extends JpaRepository<FocusSession, UUID> {
     Optional<FocusSession> findByIdAndUserId(UUID id, UUID userId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from FocusSession s where s.id = :id and s.user.id = :userId")
+    Optional<FocusSession> findByIdAndUserIdForUpdate(UUID id, UUID userId);
 
     @Query("select s from FocusSession s where s.user.id = :userId and s.status in :statuses order by s.createdAt desc")
     List<FocusSession> findActiveByUser(UUID userId, List<FocusStatus> statuses);
@@ -33,4 +41,6 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, UUID
             FocusStatus status, Instant from, Instant to);
 
     List<FocusSession> findTop10ByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    List<FocusSession> findAllByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 }
