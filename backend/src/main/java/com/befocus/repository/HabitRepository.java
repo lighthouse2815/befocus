@@ -5,6 +5,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+
+import jakarta.persistence.LockModeType;
 
 import com.befocus.entity.Habit;
 
@@ -12,4 +15,8 @@ public interface HabitRepository extends JpaRepository<Habit, UUID> {
     List<Habit> findAllByUserIdAndArchivedAtIsNullOrderByCreatedAtAsc(UUID userId);
     List<Habit> findAllByUserIdAndArchivedAtIsNotNullOrderByArchivedAtDesc(UUID userId);
     Optional<Habit> findByIdAndUserId(UUID id, UUID userId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select h from Habit h where h.id = :id and h.user.id = :userId")
+    Optional<Habit> findByIdAndUserIdForUpdate(UUID id, UUID userId);
 }
