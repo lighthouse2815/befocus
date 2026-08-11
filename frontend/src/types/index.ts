@@ -82,6 +82,7 @@ export interface Project {
   description?: string | null
   color?: HabitColor | string | null
   icon?: string | null
+  archivedAt?: string | null
   archived?: boolean
   totalFocusMinutes?: number
   completedTasks?: number
@@ -102,7 +103,10 @@ export interface Task {
   id: string
   projectId: string
   title: string
+  projectName?: string | null
+  description?: string | null
   dueDate?: string | null
+  status?: 'PENDING' | 'COMPLETED'
   completed?: boolean
   completedAt?: string | null
   focusMinutes?: number

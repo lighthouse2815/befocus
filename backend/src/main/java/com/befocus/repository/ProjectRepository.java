@@ -12,4 +12,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     List<Project> findAllByUserIdAndArchivedAtIsNullOrderByCreatedAtDesc(UUID userId);
     List<Project> findAllByUserIdAndArchivedAtIsNotNullOrderByArchivedAtDesc(UUID userId);
     Optional<Project> findByIdAndUserId(UUID id, UUID userId);
+
+    List<Project> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
 }

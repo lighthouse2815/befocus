@@ -13,6 +13,8 @@ const LoginPage = lazy(() => import('../pages/LoginPage').then((module) => ({ de
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 const RegisterPage = lazy(() => import('../pages/RegisterPage').then((module) => ({ default: module.RegisterPage })))
 const FocusPage = lazy(() => import('../pages/FocusPage').then((module) => ({ default: module.FocusPage })))
+const ProjectsPage = lazy(() => import('../pages/ProjectsPage').then((module) => ({ default: module.ProjectsPage })))
+const ProjectDetailPage = lazy(() => import('../pages/ProjectDetailPage').then((module) => ({ default: module.ProjectDetailPage })))
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +35,8 @@ export const router = createBrowserRouter([
         { path: '/habits/:id', element: <RouteBoundary><HabitDetailPage /></RouteBoundary> },
         { path: '/habits/:id/edit', element: <RouteBoundary><HabitFormPage /></RouteBoundary> },
         { path: '/focus', element: <RouteBoundary><FocusPage /></RouteBoundary> },
+        { path: '/projects', element: <RouteBoundary><ProjectsPage /></RouteBoundary> },
+        { path: '/projects/:id', element: <RouteBoundary><ProjectDetailPage /></RouteBoundary> },
       ],
     }],
   },

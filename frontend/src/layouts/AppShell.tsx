@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, CircleDot, LogOut, Menu, TimerReset, X } from 'lucide-react'
+import { CheckCircle2, CircleDot, FolderKanban, LogOut, Menu, TimerReset, X } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { Logo } from '../components/Logo'
@@ -14,11 +14,12 @@ const navItems = [
   { to: '/', label: 'Hôm nay', icon: CircleDot, end: true },
   { to: '/habits', label: 'Thói quen', icon: CheckCircle2 },
   { to: '/focus', label: 'Tập trung', icon: TimerReset },
+  { to: '/projects', label: 'Dự án', icon: FolderKanban },
 ]
 
 function NavItems({ onNavigate, mobile = false }: { onNavigate?: () => void; mobile?: boolean }) {
   return (
-    <nav aria-label="Điều hướng chính" className={mobile ? 'grid grid-cols-3' : 'space-y-1'}>
+    <nav aria-label="Điều hướng chính" className={mobile ? 'grid grid-cols-4' : 'space-y-1'}>
       {navItems.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}

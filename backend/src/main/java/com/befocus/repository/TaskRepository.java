@@ -14,6 +14,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     List<Task> findAllByUserIdAndProjectIdOrderByStatusAscDueDateAscCreatedAtAsc(UUID userId, UUID projectId);
     List<Task> findAllByUserIdAndDueDateOrderByStatusAscCreatedAtAsc(UUID userId, LocalDate dueDate);
     Optional<Task> findByIdAndUserId(UUID id, UUID userId);
+
     long countByUserIdAndStatus(UUID userId, com.befocus.entity.TaskStatus status);
     long countByUserIdAndDueDateAndStatus(UUID userId, LocalDate dueDate, com.befocus.entity.TaskStatus status);
     long countByUserIdAndProjectIdAndStatus(UUID userId, UUID projectId, com.befocus.entity.TaskStatus status);

@@ -34,8 +34,16 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, UUID
     List<FocusSession> findAllByUserIdAndProjectIdAndStatusAndCompletedAtBetween(UUID userId, UUID projectId,
             FocusStatus status, Instant from, Instant to);
 
+    List<FocusSession> findAllByUserIdAndProjectIdAndStatusOrderByCompletedAtDesc(UUID userId, UUID projectId,
+            FocusStatus status);
+
+    List<FocusSession> findTop10ByUserIdAndProjectIdOrderByCreatedAtDesc(UUID userId, UUID projectId);
+
     List<FocusSession> findAllByUserIdAndTaskIdAndStatusAndCompletedAtBetween(UUID userId, UUID taskId,
             FocusStatus status, Instant from, Instant to);
+
+    List<FocusSession> findAllByUserIdAndTaskIdAndStatusOrderByCompletedAtDesc(UUID userId, UUID taskId,
+            FocusStatus status);
 
     List<FocusSession> findAllByUserIdAndHabitIdAndStatusAndCompletedAtBetween(UUID userId, UUID habitId,
             FocusStatus status, Instant from, Instant to);

@@ -25,9 +25,10 @@ import {
 import { useTimerTicker } from '../hooks/useTimerTicker'
 import { focusKeys, focusService } from '../services/focus'
 import { habitKeys, habitsService } from '../services/habits'
+import { projectKeys, projectsService } from '../services/projects'
 import { getApiError } from '../services/api'
 import { formatTimer, useTimerStore } from '../store/timerStore'
-import type { FocusSession, FocusStatus, InterruptionKind } from '../types'
+import type { FocusSession, FocusStatus, InterruptionKind, Project, Task } from '../types'
 
 const presets = [25, 50, 90]
 
@@ -69,6 +70,8 @@ export function FocusPage() {
   const finishBreak = useTimerStore((state) => state.finishBreak)
   const [duration, setDuration] = useState(25)
   const [habitId, setHabitId] = useState('')
+  const [projectId, setProjectId] = useState('')
+  const [taskId, setTaskId] = useState('')
   const [durationError, setDurationError] = useState('')
   const [cancelOpen, setCancelOpen] = useState(false)
   const [interruptionKind, setInterruptionKind] = useState<InterruptionKind>('PHONE')
@@ -76,6 +79,12 @@ export function FocusPage() {
 
   const activeQuery = useQuery({ queryKey: focusKeys.active, queryFn: focusService.active })
   const habitsQuery = useQuery({ queryKey: habitKeys.list(false), queryFn: () => habitsService.list(false) })
+  const projectsQuery = useQuery({ queryKey: projectKeys.list, queryFn: projectsService.list })
+  const tasksQuery = useQuery({
+    queryKey: projectKeys.tasks(projectId || undefined),
+    queryFn: () => projectsService.tasks(projectId),
+    enabled: Boolean(projectId),
+  })
   const recentQuery = useQuery({ queryKey: focusKeys.recent(10), queryFn: () => focusService.recent(10) })
 
   const durationHabits = useMemo(
@@ -84,6 +93,8 @@ export function FocusPage() {
     ),
     [habitsQuery.data],
   )
+  const activeProjects = useMemo(() => (projectsQuery.data ?? []).filter((project) => !project.archived), [projectsQuery.data])
+  const openTasks = useMemo(() => (tasksQuery.data ?? []).filter((task) => !task.completed && task.status !== 'COMPLETED'), [tasksQuery.data])
 
   const syncSession = (next: FocusSession | null) => {
     setSession(next)
@@ -165,8 +176,8 @@ export function FocusPage() {
     setDurationError('')
     start.mutate({
       plannedDurationMinutes: duration,
-      projectId: null,
-      taskId: null,
+      projectId: projectId || null,
+      taskId: taskId || null,
       habitId: habitId || null,
     })
   }
@@ -218,6 +229,12 @@ export function FocusPage() {
               duration={duration}
               durationError={durationError}
               habitId={habitId}
+              projectId={projectId}
+              taskId={taskId}
+              projects={activeProjects}
+              tasks={openTasks}
+              projectsLoading={projectsQuery.isPending}
+              tasksLoading={tasksQuery.isPending}
               durationHabits={durationHabits}
               habitsLoading={habitsQuery.isPending}
               pending={start.isPending}
@@ -226,6 +243,11 @@ export function FocusPage() {
                 setDurationError('')
               }}
               onHabit={setHabitId}
+              onProject={(value) => {
+                setProjectId(value)
+                setTaskId('')
+              }}
+              onTask={setTaskId}
               onSubmit={submitStart}
             />
           )}
@@ -256,21 +278,37 @@ function ReadyView({
   duration,
   durationError,
   habitId,
+  projectId,
+  taskId,
   durationHabits,
+  projects,
+  tasks,
   habitsLoading,
+  projectsLoading,
+  tasksLoading,
   pending,
   onDuration,
   onHabit,
+  onProject,
+  onTask,
   onSubmit,
 }: {
   duration: number
   durationError: string
   habitId: string
+  projectId: string
+  taskId: string
   durationHabits: Array<{ id: string; name: string; todayProgress: number; todayTarget: number }>
+  projects: Project[]
+  tasks: Task[]
   habitsLoading: boolean
+  projectsLoading: boolean
+  tasksLoading: boolean
   pending: boolean
   onDuration: (value: number) => void
   onHabit: (value: string) => void
+  onProject: (value: string) => void
+  onTask: (value: string) => void
   onSubmit: (event: FormEvent) => void
 }) {
   return (
@@ -327,6 +365,30 @@ function ReadyView({
         </p>
         <Select
           className="mt-6"
+          id="focus-project"
+          label="Dự án (không bắt buộc)"
+          value={projectId}
+          onChange={(event) => onProject(event.target.value)}
+          disabled={projectsLoading}
+        >
+          <option value="">Không liên kết dự án</option>
+          {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+        </Select>
+        {projectId && (
+          <Select
+            className="mt-4"
+            id="focus-task"
+            label="Việc đang mở (không bắt buộc)"
+            value={taskId}
+            onChange={(event) => onTask(event.target.value)}
+            disabled={tasksLoading}
+          >
+            <option value="">Không liên kết việc</option>
+            {tasks.map((task) => <option key={task.id} value={task.id}>{task.title}</option>)}
+          </Select>
+        )}
+        <Select
+          className="mt-4"
           id="focus-habit"
           label="Thói quen hôm nay"
           value={habitId}
