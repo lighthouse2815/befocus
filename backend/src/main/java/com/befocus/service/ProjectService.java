@@ -2,17 +2,15 @@ package com.befocus.service;
 
 import java.time.Clock;
 import java.time.DateTimeException;
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,7 +59,24 @@ public class ProjectService {
         if (includeArchived) {
             projects.addAll(projectRepository.findAllByUserIdAndArchivedAtIsNotNullOrderByArchivedAtDesc(userId));
         }
-        return projects.stream().map(project -> summary(userId, project)).toList();
+        if (projects.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> projectIds = projects.stream().map(Project::getId).toList();
+        Map<UUID, Map<TaskStatus, Long>> taskCounts = new HashMap<>();
+        for (TaskRepository.ProjectTaskCount item : taskRepository.countByProjectIds(userId, projectIds)) {
+            taskCounts.computeIfAbsent(item.getProjectId(), ignored -> new HashMap<>())
+                    .put(item.getStatus(), item.getTotal());
+        }
+        Map<UUID, Long> focusMinutes = focusSessionRepository
+                .sumMinutesByProjectIds(userId, FocusStatus.COMPLETED, projectIds).stream()
+                .collect(Collectors.toMap(FocusSessionRepository.ProjectFocusMinutes::getProjectId,
+                        FocusSessionRepository.ProjectFocusMinutes::getMinutes));
+        return projects.stream().map(project -> {
+            Map<TaskStatus, Long> counts = taskCounts.getOrDefault(project.getId(), Map.of());
+            return summary(project, safeMinutes(focusMinutes.getOrDefault(project.getId(), 0L)),
+                    counts.getOrDefault(TaskStatus.COMPLETED, 0L), counts.getOrDefault(TaskStatus.PENDING, 0L));
+        }).toList();
     }
 
     @Transactional(readOnly = true)
@@ -138,16 +153,28 @@ public class ProjectService {
         long pendingTasks = taskRepository.countByUserIdAndProjectIdAndStatus(userId, project.getId(), TaskStatus.PENDING);
         int total = totalMinutes(focusSessionRepository.findAllByUserIdAndProjectIdAndStatusOrderByCompletedAtDesc(
                 userId, project.getId(), FocusStatus.COMPLETED));
+        return summary(project, total, completedTasks, pendingTasks);
+    }
+
+    private ProjectResponse summary(Project project, int total, long completedTasks, long pendingTasks) {
         return new ProjectResponse(project.getId(), project.getName(), project.getDescription(), project.getColor(),
                 project.getIcon(), project.getArchivedAt(), project.isArchived(), total, completedTasks, pendingTasks,
                 List.of(), List.of(), List.of());
     }
 
     private ProjectResponse detail(UUID userId, Project project) {
-        List<TaskResponse> tasks = taskRepository.findAllByUserIdAndProjectIdOrderByStatusAscDueDateAscCreatedAtAsc(userId,
-                project.getId()).stream().map(task -> taskResponse(task, userId)).toList();
-        List<FocusSessionResponse> recent = focusSessionRepository.findTop10ByUserIdAndProjectIdOrderByCreatedAtDesc(userId,
-                project.getId()).stream().map(focusMapper::toResponse).toList();
+        List<com.befocus.entity.Task> taskEntities = taskRepository
+                .findAllByUserIdAndProjectIdOrderByStatusAscDueDateAscCreatedAtAsc(userId, project.getId());
+        Map<UUID, Long> taskMinutes = taskEntities.isEmpty() ? Map.of()
+                : focusSessionRepository.sumMinutesByTaskIds(userId, FocusStatus.COMPLETED,
+                        taskEntities.stream().map(com.befocus.entity.Task::getId).toList()).stream()
+                        .collect(Collectors.toMap(FocusSessionRepository.TaskFocusMinutes::getTaskId,
+                                FocusSessionRepository.TaskFocusMinutes::getMinutes));
+        List<TaskResponse> tasks = taskEntities.stream()
+                .map(task -> taskResponse(task, safeMinutes(taskMinutes.getOrDefault(task.getId(), 0L))))
+                .toList();
+        List<FocusSessionResponse> recent = focusMapper.toResponses(focusSessionRepository
+                .findTop10ByUserIdAndProjectIdOrderByCreatedAtDesc(userId, project.getId()));
         List<FocusSession> completed = focusSessionRepository.findAllByUserIdAndProjectIdAndStatusOrderByCompletedAtDesc(
                 userId, project.getId(), FocusStatus.COMPLETED);
         int total = totalMinutes(completed);
@@ -159,9 +186,7 @@ public class ProjectService {
                 tasks, recent, weekly);
     }
 
-    private TaskResponse taskResponse(com.befocus.entity.Task task, UUID userId) {
-        int minutes = totalMinutes(focusSessionRepository.findAllByUserIdAndTaskIdAndStatusOrderByCompletedAtDesc(userId,
-                task.getId(), FocusStatus.COMPLETED));
+    private TaskResponse taskResponse(com.befocus.entity.Task task, int minutes) {
         return new TaskResponse(task.getId(), task.getProject().getId(), task.getProject().getName(), task.getTitle(),
                 task.getDescription(), task.getDueDate(), task.getStatus(), task.getStatus() == TaskStatus.COMPLETED,
                 task.getCompletedAt(), minutes);
@@ -170,6 +195,10 @@ public class ProjectService {
     private int totalMinutes(List<FocusSession> sessions) {
         return sessions.stream().mapToInt(session -> session.getActualDurationMinutes() == null ? 0
                 : session.getActualDurationMinutes()).sum();
+    }
+
+    private int safeMinutes(long minutes) {
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(0, minutes));
     }
 
     private List<WeeklyActivityPoint> weeklyActivity(UUID userId, List<FocusSession> completed) {

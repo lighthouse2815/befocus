@@ -82,7 +82,7 @@ export function ProjectDetailPage() {
         <section aria-labelledby="tasks-title">
           <div className="mb-4 flex items-end justify-between gap-4"><div><p className="section-kicker">Danh sách</p><h2 id="tasks-title" className="mt-1 text-xl font-semibold">Việc cần tiến triển</h2></div><span className="text-sm text-ink-soft">{project.pendingTasks} đang mở</span></div>
           <form onSubmit={submitTask} className="mb-5 grid gap-3 rounded-surface border border-line bg-paper-raised p-4 sm:grid-cols-[minmax(0,1fr)_160px_auto] sm:items-end">
-            <Input label="Tên việc mới" value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength={200} placeholder="Ví dụ: Viết phần phương pháp" />
+            <Input label="Tên việc mới" value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength={200} required placeholder="Ví dụ: Viết phần phương pháp" />
             <Input label="Hạn (không bắt buộc)" type="date" value={taskDueDate} onChange={(event) => setTaskDueDate(event.target.value)} />
             <Button type="submit" loading={createTask.isPending}><Plus className="h-4 w-4" aria-hidden="true" />Thêm việc</Button>
           </form>

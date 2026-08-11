@@ -129,10 +129,7 @@ public class FocusService {
 
     @Transactional(readOnly = true)
     public List<FocusSessionResponse> recent(UUID userId, int limit) {
-        return sessionRepository.findAllByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, limit))
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+        return mapper.toResponses(sessionRepository.findAllByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, limit)));
     }
 
     @Transactional

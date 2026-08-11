@@ -19,6 +19,8 @@ export default {
         'clay-wash': 'var(--clay-wash)',
         amber: 'var(--amber)',
         'amber-wash': 'var(--amber-wash)',
+        ocean: 'var(--ocean)',
+        plum: 'var(--plum)',
         danger: 'var(--danger)',
       },
       fontFamily: {

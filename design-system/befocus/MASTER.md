@@ -1,6 +1,6 @@
 # BeFocus — Quiet Field design system
 
-This document is the project source of truth. The external UI skill was used for accessibility and interaction checks; its generic palette/style suggestions were deliberately rejected where they conflicted with the product brief.
+This document is the project source of truth. The visual system was designed directly from the product brief and first principles; no global UI/design skill or stock interface template is used.
 
 ## Product stance
 
@@ -30,6 +30,8 @@ BeFocus is a personal workbench, not a marketing page. The interface should feel
 --clay-wash: #f8e9e1;
 --amber: #a96c13;
 --amber-wash: #fff1d2;
+--ocean: #4f7188;
+--plum: #795b70;
 --danger: #b83a3a;
 --focus-ring: #1b78a8;
 ```
@@ -57,5 +59,4 @@ Desktop uses a 232px left rail plus a fluid content column. Mobile replaces the 
 
 ## Chart conventions
 
-Use Recharts only for data that changes over time. The weekly focus chart is a low-ink line/area chart with one moss series and a visible data table on narrow screens. Habit heatmap cells use light-to-dark moss wash with an accessible label (`date`, `value`, `target`).
-
+Use Recharts only when a chart makes a real comparison easier to read. Timing distributions use low-ink bar charts with one moss series and textual labels; summary breakdowns remain accessible lists with progress bars. Habit heatmap cells use light-to-dark moss wash with an accessible label (`date`, `value`, `target`).

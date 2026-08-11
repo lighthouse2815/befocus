@@ -9,5 +9,6 @@ import com.befocus.entity.FocusInterruption;
 
 public interface FocusInterruptionRepository extends JpaRepository<FocusInterruption, UUID> {
     List<FocusInterruption> findAllByFocusSessionIdOrderByOccurredAtAsc(UUID sessionId);
+    List<FocusInterruption> findAllByFocusSessionIdInOrderByOccurredAtAsc(List<UUID> sessionIds);
     long countByFocusSessionIdIn(List<UUID> sessionIds);
 }

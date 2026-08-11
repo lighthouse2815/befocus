@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 import { authService } from '../services/auth'
 
@@ -12,8 +13,9 @@ export function useAuthBootstrap() {
     let cancelled = false
     authService.me().then((user) => {
       if (!cancelled) setUser(user)
-    }).catch(() => {
-      if (!cancelled) clearSession()
+    }).catch((error: unknown) => {
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined
+      if (!cancelled && (status === 401 || status === 403)) clearSession()
     })
     return () => { cancelled = true }
   }, [accessToken, clearSession, hydrated, setUser])

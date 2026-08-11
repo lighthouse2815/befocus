@@ -7,6 +7,7 @@ import { Button, EmptyState, ErrorState, Input, LoadingBlock, PageHeader, Select
 import { getApiError } from '../services/api'
 import { projectKeys, projectsService } from '../services/projects'
 import type { HabitColor } from '../types'
+import { habitColorClass } from '../utils/habits'
 import { Link } from 'react-router-dom'
 
 const colors: Array<{ value: HabitColor; label: string }> = [
@@ -79,7 +80,7 @@ export function ProjectsPage() {
             {projectsQuery.data.map((project) => (
               <Link key={project.id} to={`/projects/${project.id}`} className="group grid gap-4 py-5 transition-colors hover:bg-paper-raised sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-4">
                 <div className="flex min-w-0 items-start gap-4">
-                  <span className={`mt-1 h-3 w-3 shrink-0 rounded-full bg-${project.color ?? 'ink'}`} aria-hidden="true" />
+                  <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${habitColorClass((project.color ?? 'ink') as HabitColor)}`} aria-hidden="true" />
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="truncate text-lg font-semibold">{project.name}</h3>

@@ -1,6 +1,9 @@
 package com.befocus.mapper;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -24,6 +27,24 @@ public class FocusMapper {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+        return toResponse(session, interruptions);
+    }
+
+    public List<FocusSessionResponse> toResponses(List<FocusSession> sessions) {
+        if (sessions.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, List<FocusInterruptionResponse>> interruptions = interruptionRepository
+                .findAllByFocusSessionIdInOrderByOccurredAtAsc(sessions.stream().map(FocusSession::getId).toList())
+                .stream()
+                .collect(Collectors.groupingBy(item -> item.getFocusSession().getId(),
+                        Collectors.mapping(this::toResponse, Collectors.toList())));
+        return sessions.stream()
+                .map(session -> toResponse(session, interruptions.getOrDefault(session.getId(), List.of())))
+                .toList();
+    }
+
+    private FocusSessionResponse toResponse(FocusSession session, List<FocusInterruptionResponse> interruptions) {
         return new FocusSessionResponse(
                 session.getId(),
                 session.getStatus(),

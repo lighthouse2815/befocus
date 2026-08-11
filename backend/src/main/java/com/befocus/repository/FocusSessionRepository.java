@@ -16,6 +16,16 @@ import com.befocus.entity.FocusStatus;
 import jakarta.persistence.LockModeType;
 
 public interface FocusSessionRepository extends JpaRepository<FocusSession, UUID> {
+    interface ProjectFocusMinutes {
+        UUID getProjectId();
+        long getMinutes();
+    }
+
+    interface TaskFocusMinutes {
+        UUID getTaskId();
+        long getMinutes();
+    }
+
     Optional<FocusSession> findByIdAndUserId(UUID id, UUID userId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -29,6 +39,9 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, UUID
             Instant from, Instant to);
 
     List<FocusSession> findAllByUserIdAndStatusAndCompletedAtBetween(UUID userId, FocusStatus status, Instant from,
+            Instant to);
+
+    List<FocusSession> findAllByUserIdAndStatusAndCancelledAtBetween(UUID userId, FocusStatus status, Instant from,
             Instant to);
 
     List<FocusSession> findAllByUserIdAndProjectIdAndStatusAndCompletedAtBetween(UUID userId, UUID projectId,
@@ -51,4 +64,14 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, UUID
     List<FocusSession> findTop10ByUserIdOrderByCreatedAtDesc(UUID userId);
 
     List<FocusSession> findAllByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+
+    @Query("select s.project.id as projectId, coalesce(sum(s.actualDurationMinutes), 0) as minutes "
+            + "from FocusSession s where s.user.id = :userId and s.status = :status and s.project.id in :projectIds "
+            + "group by s.project.id")
+    List<ProjectFocusMinutes> sumMinutesByProjectIds(UUID userId, FocusStatus status, List<UUID> projectIds);
+
+    @Query("select s.task.id as taskId, coalesce(sum(s.actualDurationMinutes), 0) as minutes "
+            + "from FocusSession s where s.user.id = :userId and s.status = :status and s.task.id in :taskIds "
+            + "group by s.task.id")
+    List<TaskFocusMinutes> sumMinutesByTaskIds(UUID userId, FocusStatus status, List<UUID> taskIds);
 }

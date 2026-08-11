@@ -109,12 +109,7 @@ export function DashboardPage() {
         eyebrow={dateLabel(today)}
         title={`Chào ${firstName}, hôm nay mình giữ nhịp nào?`}
         description="Những việc lặp lại đúng lịch được đặt ở đây để bạn bắt đầu mà không phải tìm kiếm."
-        action={(
-          <Button onClick={() => navigate('/habits/new')}>
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Thêm thói quen
-          </Button>
-        )}
+        action={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => navigate('/focus')}><TimerReset className="h-4 w-4" aria-hidden="true" />Tập trung ngay</Button><Button onClick={() => navigate('/habits/new')}><Plus className="h-4 w-4" aria-hidden="true" />Thêm thói quen</Button></div>}
       />
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]" aria-label="Tổng quan hôm nay">
@@ -192,6 +187,11 @@ export function DashboardPage() {
           <p className="mt-5 text-sm text-ink-soft">7 ngày tập trung</p>
           <div className="mt-3 flex h-10 items-end gap-1" aria-label="Biểu đồ phút tập trung 7 ngày">{dashboard.data.weeklyFocus.map((point) => <span key={point.date} className="min-w-0 flex-1 rounded-t-sm bg-moss/70" style={{ height: `${Math.max(8, Math.min(100, point.minutes * 2))}%` }} title={`${point.date}: ${point.minutes} phút`} />)}</div>
         </Link>
+      </section>
+
+      <section className="mt-8" aria-labelledby="recent-activity-title">
+        <div className="mb-4 flex items-end justify-between gap-4"><div><p className="section-kicker">Dấu vết thật</p><h2 id="recent-activity-title" className="mt-1 text-xl font-semibold">Hoạt động gần đây</h2></div><span className="text-sm text-ink-soft">Tối đa 10 phiên</span></div>
+        {dashboard.data.recentActivity.length ? <ol className="divide-y divide-line border-y border-line">{dashboard.data.recentActivity.map((item, index) => { const timestamp = item.timestamp ?? item.occurredAt; return <li key={item.id ?? `${timestamp}-${index}`} className="grid gap-1 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-5"><div><p className="font-semibold">{item.title ?? 'Phiên tập trung'}</p><p className="mt-0.5 text-sm text-ink-soft">{item.description ?? item.type ?? 'Hoạt động đã được ghi nhận'}</p></div>{timestamp && <time className="text-xs text-ink-soft" dateTime={timestamp}>{new Date(timestamp).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}</time>}</li> })}</ol> : <p className="border-y border-line py-8 text-sm text-ink-soft">Chưa có hoạt động nào. Bắt đầu một phiên tập trung để tạo dấu vết đầu tiên.</p>}
       </section>
 
       <section className="mt-8 border-t border-line pt-6">

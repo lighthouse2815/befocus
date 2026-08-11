@@ -17,6 +17,13 @@ docker compose up --build
 
 The seed runs through the same persistence rules as the application and checks stable identifiers before inserting, so restarting a seeded development environment does not intentionally duplicate records. The seeded account and dataset are defined in `DevelopmentSeedConfig` in the backend source; do not reuse those credentials for a real account.
 
+Development-only account:
+
+- Email: `demo@befocus.local`
+- Password: `BeFocusDemo2026!`
+
+The dataset includes three habit types, scheduled entries, reminders, one project, open/completed tasks, linked completed focus sessions, and an interruption. This makes Dashboard, Project, Habit, and Analytics screens useful immediately without enabling seed data for normal production users.
+
 After the first successful seed, turn the flag off again:
 
 ```powershell

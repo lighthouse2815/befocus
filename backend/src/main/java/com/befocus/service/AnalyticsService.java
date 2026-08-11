@@ -9,7 +9,6 @@ import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,6 @@ import com.befocus.entity.ScheduleType;
 import com.befocus.entity.TaskStatus;
 import com.befocus.entity.User;
 import com.befocus.mapper.FocusMapper;
-import com.befocus.repository.DailyMetricRepository;
 import com.befocus.repository.FocusInterruptionRepository;
 import com.befocus.repository.FocusSessionRepository;
 import com.befocus.repository.HabitEntryRepository;
@@ -51,14 +49,13 @@ public class AnalyticsService {
     private final FocusSessionRepository focusRepository;
     private final FocusInterruptionRepository interruptionRepository;
     private final TaskRepository taskRepository;
-    private final DailyMetricRepository dailyMetricRepository;
     private final FocusMapper focusMapper;
     private final Clock clock;
 
     public AnalyticsService(UserRepository userRepository, HabitRepository habitRepository,
             HabitEntryRepository entryRepository, HabitScheduleService scheduleService,
             FocusSessionRepository focusRepository, FocusInterruptionRepository interruptionRepository,
-            TaskRepository taskRepository, DailyMetricRepository dailyMetricRepository, FocusMapper focusMapper,
+            TaskRepository taskRepository, FocusMapper focusMapper,
             Clock clock) {
         this.userRepository = userRepository;
         this.habitRepository = habitRepository;
@@ -67,7 +64,6 @@ public class AnalyticsService {
         this.focusRepository = focusRepository;
         this.interruptionRepository = interruptionRepository;
         this.taskRepository = taskRepository;
-        this.dailyMetricRepository = dailyMetricRepository;
         this.focusMapper = focusMapper;
         this.clock = clock;
     }
@@ -77,11 +73,14 @@ public class AnalyticsService {
         User user = user(userId);
         LocalDate today = requestedDate == null ? now(user) : requestedDate;
         List<Habit> habits = habitRepository.findAllByUserIdAndArchivedAtIsNullOrderByCreatedAtAsc(userId);
+        Map<UUID, List<HabitEntry>> entriesByHabit = habits.isEmpty() ? Map.of()
+                : entryRepository.findAllByHabitIdInOrderByDateAsc(habits.stream().map(Habit::getId).toList()).stream()
+                        .collect(Collectors.groupingBy(entry -> entry.getHabit().getId()));
         int habitCompleted = 0;
         int habitMinutes = 0;
         int currentStreak = 0;
         for (Habit habit : habits) {
-            List<HabitEntry> entries = entryRepository.findAllByHabitIdOrderByDateAsc(habit.getId());
+            List<HabitEntry> entries = entriesByHabit.getOrDefault(habit.getId(), List.of());
             if (scheduleService.isScheduledOn(habit, today)) {
                 HabitEntry entry = entries.stream().filter(item -> item.getDate().equals(today)).findFirst().orElse(null);
                 if (entry != null) {
@@ -91,7 +90,11 @@ public class AnalyticsService {
             }
             currentStreak = Math.max(currentStreak, scheduleService.calculateStreaks(habit, entries, today).current());
         }
-        List<FocusSession> completedToday = completedSessions(userId, today, today);
+        List<FocusSession> completedWeek = completedSessions(userId, today.minusDays(6), today);
+        List<FocusSession> completedToday = completedWeek.stream()
+                .filter(session -> session.getCompletedAt() != null
+                        && session.getCompletedAt().atZone(zone(user)).toLocalDate().equals(today))
+                .toList();
         int focusMinutes = totalMinutes(completedToday);
         long totalTasks = taskRepository.countByUserIdAndDueDateAndStatus(userId, today, TaskStatus.PENDING)
                 + taskRepository.countByUserIdAndDueDateAndStatus(userId, today, TaskStatus.COMPLETED);
@@ -99,7 +102,12 @@ public class AnalyticsService {
         List<DashboardResponse.WeeklyFocusPoint> weekly = new ArrayList<>();
         for (int i = 6; i >= 0; i--) {
             LocalDate date = today.minusDays(i);
-            weekly.add(new DashboardResponse.WeeklyFocusPoint(date, totalMinutes(completedSessions(userId, date, date))));
+            int minutes = completedWeek.stream()
+                    .filter(session -> session.getCompletedAt() != null
+                            && session.getCompletedAt().atZone(zone(user)).toLocalDate().equals(date))
+                    .mapToInt(this::sessionMinutes)
+                    .sum();
+            weekly.add(new DashboardResponse.WeeklyFocusPoint(date, minutes));
         }
         List<ActivityItem> activity = focusRepository.findTop10ByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(session -> new ActivityItem(session.getId(), session.getStatus().name(),
@@ -120,10 +128,11 @@ public class AnalyticsService {
         User user = user(userId);
         LocalDate[] range = normalizedRange(user, from, to);
         List<FocusSession> completed = completedSessions(userId, range[0], range[1]);
-        List<FocusSession> cancelled = focusRepository.findAllByUserIdAndStatusAndCompletedAtBetween(userId, FocusStatus.CANCELLED,
+        List<FocusSession> cancelled = focusRepository.findAllByUserIdAndStatusAndCancelledAtBetween(userId, FocusStatus.CANCELLED,
                 startOf(range[0], zone(user)), endOf(range[1], zone(user)));
         int totalMinutes = totalMinutes(completed);
-        int interruptions = completed.stream().mapToInt(session -> interruptionRepository.findAllByFocusSessionIdOrderByOccurredAtAsc(session.getId()).size()).sum();
+        int interruptions = completed.isEmpty() ? 0 : Math.toIntExact(interruptionRepository
+                .countByFocusSessionIdIn(completed.stream().map(FocusSession::getId).toList()));
         List<String> insights = new ArrayList<>();
         if (completed.isEmpty()) insights.add("Hoàn thành phiên đầu tiên để bắt đầu thấy nhịp tập trung của bạn.");
         else {
@@ -145,24 +154,26 @@ public class AnalyticsService {
         User user = user(userId);
         LocalDate[] range = normalizedRange(user, from, to);
         List<Habit> habits = habitRepository.findAllByUserIdAndArchivedAtIsNullOrderByCreatedAtAsc(userId);
-        Map<UUID, List<HabitEntry>> entries = habits.stream().collect(Collectors.toMap(Habit::getId,
-                habit -> entryRepository.findAllByHabitIdAndDateBetweenOrderByDateAsc(habit.getId(), range[0], range[1])));
+        Map<UUID, List<HabitEntry>> allEntries = habits.isEmpty() ? Map.of()
+                : entryRepository.findAllByHabitIdInOrderByDateAsc(habits.stream().map(Habit::getId).toList()).stream()
+                        .collect(Collectors.groupingBy(entry -> entry.getHabit().getId()));
+        Map<UUID, List<HabitEntry>> entries = allEntries.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
+                entry -> entry.getValue().stream()
+                        .filter(item -> !item.getDate().isBefore(range[0]) && !item.getDate().isAfter(range[1]))
+                        .toList()));
         int scheduledTotal = 0;
         int completedTotal = 0;
         int current = 0;
         int longest = 0;
         List<HabitAnalyticsResponse.HabitBreakdown> habitBreakdowns = new ArrayList<>();
         for (Habit habit : habits) {
-            List<HabitEntry> all = entryRepository.findAllByHabitIdOrderByDateAsc(habit.getId());
+            List<HabitEntry> all = allEntries.getOrDefault(habit.getId(), List.of());
             var streaks = scheduleService.calculateStreaks(habit, all, now(user));
             current = Math.max(current, streaks.current());
             longest = Math.max(longest, streaks.longest());
-            int scheduled = 0;
-            int completed = 0;
-            for (LocalDate date = range[0]; !date.isAfter(range[1]); date = date.plusDays(1)) {
-                if (scheduleService.isScheduledOn(habit, date)) scheduled++;
-                if (hasCompleted(entries.get(habit.getId()), habit, date)) completed++;
-            }
+            ProgressCounts progress = progressCounts(habit, entries.getOrDefault(habit.getId(), List.of()), range[0], range[1]);
+            int scheduled = progress.total();
+            int completed = progress.completed();
             scheduledTotal += scheduled;
             completedTotal += completed;
             habitBreakdowns.add(new HabitAnalyticsResponse.HabitBreakdown(habit.getId().toString(), habit.getName(),
@@ -176,27 +187,64 @@ public class AnalyticsService {
             for (Habit habit : habits) {
                 if (scheduleService.isScheduledOn(habit, date)) {
                     total++;
-                    if (hasCompleted(entries.get(habit.getId()), habit, date)) complete++;
+                    if (hasCompleted(entries.getOrDefault(habit.getId(), List.of()), habit, date)) complete++;
                 }
             }
             daily.add(new HabitAnalyticsResponse.DailyProgressPoint(date.toString(), complete, total, total == 0 ? 0 : complete * 100d / total));
             heatmap.add(new HabitAnalyticsResponse.HeatmapCell(date.toString(), complete, total, total > 0 && complete == total));
         }
         double rate = scheduledTotal == 0 ? 0 : completedTotal * 100d / scheduledTotal;
-        Map<LocalDate, int[]> weeklyTotals = new LinkedHashMap<>();
-        for (HabitAnalyticsResponse.DailyProgressPoint point : daily) {
-            LocalDate date = LocalDate.parse(point.date());
-            LocalDate week = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-            int[] totals = weeklyTotals.computeIfAbsent(week, ignored -> new int[2]);
-            totals[0] += point.completed();
-            totals[1] += point.total();
+        List<HabitAnalyticsResponse.WeeklyProgressPoint> weekly = new ArrayList<>();
+        LocalDate firstWeek = range[0].with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        for (LocalDate week = firstWeek; !week.isAfter(range[1]); week = week.plusWeeks(1)) {
+            LocalDate weekFrom = week.isBefore(range[0]) ? range[0] : week;
+            LocalDate weekEnd = week.plusDays(6);
+            LocalDate weekTo = weekEnd.isAfter(range[1]) ? range[1] : weekEnd;
+            int completed = 0;
+            int total = 0;
+            for (Habit habit : habits) {
+                ProgressCounts progress = progressCounts(habit, entries.getOrDefault(habit.getId(), List.of()), weekFrom, weekTo);
+                completed += progress.completed();
+                total += progress.total();
+            }
+            weekly.add(new HabitAnalyticsResponse.WeeklyProgressPoint(week.toString(), completed, total,
+                    total == 0 ? 0 : completed * 100d / total));
         }
-        List<HabitAnalyticsResponse.WeeklyProgressPoint> weekly = weeklyTotals.entrySet().stream()
-                .map(entry -> new HabitAnalyticsResponse.WeeklyProgressPoint(entry.getKey().toString(), entry.getValue()[0],
-                        entry.getValue()[1], entry.getValue()[1] == 0 ? 0 : entry.getValue()[0] * 100d / entry.getValue()[1]))
-                .toList();
         return new HabitAnalyticsResponse(rate, current, longest, rate, daily, weekly, heatmap, habitBreakdowns);
     }
+
+    private ProgressCounts progressCounts(Habit habit, List<HabitEntry> entries, LocalDate from, LocalDate to) {
+        if (habit.getScheduleType() != ScheduleType.TIMES_PER_WEEK) {
+            int total = 0;
+            int completed = 0;
+            for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
+                if (!scheduleService.isScheduledOn(habit, date)) continue;
+                total++;
+                if (hasCompleted(entries, habit, date)) completed++;
+            }
+            return new ProgressCounts(completed, total);
+        }
+
+        int total = 0;
+        int completed = 0;
+        LocalDate firstWeek = from.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        for (LocalDate week = firstWeek; !week.isAfter(to); week = week.plusWeeks(1)) {
+            LocalDate weekFrom = week.isBefore(from) ? from : week;
+            LocalDate weekEnd = week.plusDays(6);
+            LocalDate weekTo = weekEnd.isAfter(to) ? to : weekEnd;
+            int availableDays = Math.toIntExact(java.time.temporal.ChronoUnit.DAYS.between(weekFrom, weekTo) + 1);
+            int expected = Math.min(habit.getTimesPerWeek(), availableDays);
+            int actual = Math.toIntExact(entries.stream()
+                    .filter(entry -> !entry.getDate().isBefore(weekFrom) && !entry.getDate().isAfter(weekTo))
+                    .filter(entry -> entry.getValue().compareTo(habit.getTargetValue()) >= 0)
+                    .count());
+            total += expected;
+            completed += Math.min(expected, actual);
+        }
+        return new ProgressCounts(completed, total);
+    }
+
+    private record ProgressCounts(int completed, int total) { }
 
     private List<AnalyticsBreakdown> breakdown(List<FocusSession> sessions, Function<FocusSession, String> keyFunction) {
         Map<String, List<FocusSession>> groups = sessions.stream().collect(Collectors.groupingBy(keyFunction, LinkedHashMap::new, Collectors.toList()));

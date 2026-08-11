@@ -4,8 +4,8 @@ const colorClasses: Record<HabitColor, string> = {
   moss: 'bg-moss',
   clay: 'bg-clay',
   amber: 'bg-amber',
-  ocean: 'bg-[#4f7188]',
-  plum: 'bg-[#795b70]',
+  ocean: 'bg-ocean',
+  plum: 'bg-plum',
   ink: 'bg-ink',
 }
 

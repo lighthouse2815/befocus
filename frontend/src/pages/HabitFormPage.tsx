@@ -55,8 +55,8 @@ const colorOptions: Array<{ value: HabitColor; label: string; className: string 
   { value: 'moss', label: 'Rêu', className: 'bg-moss' },
   { value: 'clay', label: 'Đất nung', className: 'bg-clay' },
   { value: 'amber', label: 'Hổ phách', className: 'bg-amber' },
-  { value: 'ocean', label: 'Xanh biển', className: 'bg-[#4f7188]' },
-  { value: 'plum', label: 'Mận', className: 'bg-[#795b70]' },
+  { value: 'ocean', label: 'Xanh biển', className: 'bg-ocean' },
+  { value: 'plum', label: 'Mận', className: 'bg-plum' },
 ]
 
 const typeOptions = [
