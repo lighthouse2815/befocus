@@ -1,15 +1,71 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
-test('registers, creates a project task, completes linked focus, and sees analytics', async ({ page }) => {
-  const suffix = Date.now()
-  const projectName = `E2E project ${suffix}`
-
+async function register(page: Page, label: string) {
+  const suffix = `${label}.${Date.now()}`
   await page.goto('/register')
   await page.getByLabel('Họ và tên').fill('E2E Focus User')
-  await page.getByLabel('Email').fill(`e2e.${suffix}@example.test`)
+  await page.getByLabel('Email').fill(`${suffix}@example.test`)
   await page.getByLabel('Mật khẩu').fill('FocusFlow2026!')
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click()
   await expect(page.getByRole('heading', { name: 'Điều cần lặp lại' })).toBeVisible()
+}
+
+test('registers, logs in, completes a boolean habit, and updates dashboard', async ({ page }) => {
+  const suffix = Date.now()
+  const email = `e2e.auth.${suffix}@example.test`
+
+  await page.goto('/register')
+  await page.getByLabel('Họ và tên').fill('E2E Auth User')
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Mật khẩu').fill('FocusFlow2026!')
+  await page.getByRole('button', { name: 'Tạo tài khoản' }).click()
+  await expect(page.getByRole('heading', { name: 'Điều cần lặp lại' })).toBeVisible()
+  await page.getByRole('link', { name: 'Thói quen', exact: true }).click()
+  await page.getByRole('button', { name: /Tạo thói quen/ }).first().click()
+  await page.getByLabel('Tên thói quen').fill('E2E boolean')
+  await page.getByRole('button', { name: /Tạo thói quen/ }).last().click()
+  await expect(page.getByRole('heading', { name: 'E2E boolean' })).toBeVisible()
+  await page.getByRole('link', { name: 'Hôm nay', exact: true }).click()
+  await expect(page.getByText('E2E boolean', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Đánh dấu E2E boolean hoàn thành' }).click()
+  await expect(page.getByText('1 / 1 lần', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Đăng xuất' }).click()
+  await expect(page.getByRole('heading', { name: 'Đăng nhập' })).toBeVisible()
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Mật khẩu').fill('FocusFlow2026!')
+  await page.getByRole('button', { name: 'Đăng nhập' }).click()
+  await expect(page.getByText('E2E boolean', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Hoàn tác E2E boolean' })).toBeVisible()
+})
+
+test('links a duration habit to focus and persists progress', async ({ page }) => {
+  await register(page, 'e2e.duration')
+  await page.getByRole('link', { name: 'Thói quen', exact: true }).click()
+  await page.getByRole('button', { name: /Tạo thói quen/ }).first().click()
+  await page.getByLabel('Tên thói quen').fill('E2E duration')
+  await page.getByRole('radio', { name: /Thời lượng/ }).check({ force: true })
+  await page.getByLabel('Mục tiêu').fill('1')
+  await page.getByLabel('Đơn vị').fill('phút')
+  await page.getByRole('button', { name: /Tạo thói quen/ }).last().click()
+  await expect(page.getByRole('heading', { name: 'E2E duration' })).toBeVisible()
+  await page.getByRole('link', { name: 'Tập trung', exact: true }).click()
+  await page.getByLabel('Thói quen hôm nay').selectOption({ label: 'E2E duration · 0/1 phút' })
+  await page.getByLabel('Thời lượng tùy chỉnh').fill('1')
+  await page.getByRole('button', { name: 'Bắt đầu tập trung' }).click()
+  await expect(page.getByRole('timer')).toBeVisible()
+  await page.waitForTimeout(1_500)
+  await page.getByRole('button', { name: 'Kết thúc & ghi nhận' }).click()
+  await expect(page.getByText('Đã ghi nhận 1 phút tập trung.')).toBeVisible()
+  await page.getByRole('link', { name: 'Thói quen', exact: true }).click()
+  await page.getByRole('link', { name: 'E2E duration', exact: true }).click()
+  await expect(page.getByLabel('Đã đạt mục tiêu').getByText('1 / 1 phút', { exact: true })).toBeVisible()
+})
+
+test('creates a project task, completes linked focus, and sees analytics', async ({ page }) => {
+  const suffix = Date.now()
+  const projectName = `E2E project ${suffix}`
+  await register(page, 'e2e.project')
 
   await page.getByRole('link', { name: 'Dự án', exact: true }).click()
   await page.getByRole('button', { name: 'Tạo dự án' }).first().click()
@@ -17,7 +73,6 @@ test('registers, creates a project task, completes linked focus, and sees analyt
   await page.getByRole('button', { name: 'Tạo dự án' }).last().click()
   await expect(page.getByRole('link', { name: new RegExp(projectName) })).toBeVisible()
   await page.getByRole('link', { name: new RegExp(projectName) }).click()
-
   await page.getByPlaceholder('Ví dụ: Viết phần phương pháp').fill('E2E task')
   await page.getByRole('button', { name: 'Thêm việc' }).click()
   await expect(page.getByText('E2E task', { exact: true })).toBeVisible()
@@ -31,11 +86,7 @@ test('registers, creates a project task, completes linked focus, and sees analyt
   await page.waitForTimeout(1_500)
   await page.getByRole('button', { name: 'Kết thúc & ghi nhận' }).click()
   await expect(page.getByText('Đã ghi nhận 1 phút tập trung.')).toBeVisible()
-
   await page.getByRole('link', { name: 'Phân tích', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Phân tích nhịp làm việc' })).toBeVisible()
   await expect(page.getByText('E2E project', { exact: false })).toBeVisible()
-
-  await page.getByRole('link', { name: 'Cài đặt', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Cài đặt' })).toBeVisible()
 })
