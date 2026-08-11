@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, CheckCircle2, Plus, Undo2 } from 'lucide-react'
+import { ArrowRight, BarChart3, CheckCircle2, ListTodo, Plus, TimerReset, Undo2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, EmptyState, ErrorState, LoadingBlock, PageHeader, ProgressBar, Stat } from '../components/ui'
 import { useToast } from '../components/Toast'
@@ -8,6 +8,7 @@ import { habitKeys, habitsService } from '../services/habits'
 import { getApiError } from '../services/api'
 import { dateLabel, isoToday } from '../hooks/useDateRange'
 import { useAuthStore } from '../store/authStore'
+import { analyticsKeys, analyticsService } from '../services/analytics'
 import type { Habit } from '../types'
 
 function HabitLedgerRow({
@@ -71,6 +72,7 @@ export function DashboardPage() {
     queryKey: habitKeys.list(false),
     queryFn: () => habitsService.list(false),
   })
+  const dashboard = useQuery({ queryKey: analyticsKeys.dashboard(today), queryFn: () => analyticsService.dashboard(today) })
 
   const completeHabit = useMutation({
     mutationFn: async (habit: Habit) => {
@@ -93,9 +95,12 @@ export function DashboardPage() {
   const reminders = todayHabits.filter((habit) => Boolean(habit.reminderTime)).length
   const firstName = user?.name.trim().split(/\s+/).at(-1) || 'bạn'
 
-  if (habits.isPending) return <LoadingBlock rows={7} label="Đang tải trang hôm nay" />
+  if (habits.isPending || dashboard.isPending) return <LoadingBlock rows={7} label="Đang tải trang hôm nay" />
   if (habits.isError) {
     return <ErrorState message={getApiError(habits.error, 'Không thể tải tổng quan hôm nay.')} onRetry={() => void habits.refetch()} />
+  }
+  if (dashboard.isError) {
+    return <ErrorState message={getApiError(dashboard.error, 'Không thể tải số liệu hôm nay.')} onRetry={() => void dashboard.refetch()} />
   }
 
   return (
@@ -167,6 +172,26 @@ export function DashboardPage() {
             <Stat label="Có nhắc giờ" value={reminders} detail="trong hôm nay" />
           </div>
         </aside>
+      </section>
+
+      <section className="mt-8 grid gap-5 border-y border-line py-7 sm:grid-cols-3" aria-label="Nhịp tập trung và công việc">
+        <Link to="/focus" className="group rounded-surface border border-line bg-paper-raised p-5 hover:border-moss">
+          <div className="flex items-center justify-between gap-3"><TimerReset className="h-5 w-5 text-moss" aria-hidden="true" /><ArrowRight className="h-4 w-4 text-ink-faint transition-transform group-hover:translate-x-1" aria-hidden="true" /></div>
+          <p className="mt-5 text-sm text-ink-soft">Tập trung hôm nay</p>
+          <p className="mt-1 font-mono text-3xl font-semibold">{dashboard.data.focusMinutes}<span className="ml-1 font-sans text-sm font-medium text-ink-soft">phút</span></p>
+          {dashboard.data.activeSession && <p className="mt-2 text-xs font-semibold text-moss-dark">Đang có phiên cần quay lại</p>}
+        </Link>
+        <Link to="/projects" className="group rounded-surface border border-line bg-paper-raised p-5 hover:border-moss">
+          <div className="flex items-center justify-between gap-3"><ListTodo className="h-5 w-5 text-moss" aria-hidden="true" /><ArrowRight className="h-4 w-4 text-ink-faint transition-transform group-hover:translate-x-1" aria-hidden="true" /></div>
+          <p className="mt-5 text-sm text-ink-soft">Việc đã hoàn thành</p>
+          <p className="mt-1 font-mono text-3xl font-semibold">{dashboard.data.tasks.completed}<span className="ml-1 font-sans text-sm font-medium text-ink-soft">/ {dashboard.data.tasks.total}</span></p>
+          <p className="mt-2 text-xs text-ink-soft">Trong toàn bộ dự án</p>
+        </Link>
+        <Link to="/analytics" className="group rounded-surface border border-line bg-paper-raised p-5 hover:border-moss">
+          <div className="flex items-center justify-between gap-3"><BarChart3 className="h-5 w-5 text-moss" aria-hidden="true" /><ArrowRight className="h-4 w-4 text-ink-faint transition-transform group-hover:translate-x-1" aria-hidden="true" /></div>
+          <p className="mt-5 text-sm text-ink-soft">7 ngày tập trung</p>
+          <div className="mt-3 flex h-10 items-end gap-1" aria-label="Biểu đồ phút tập trung 7 ngày">{dashboard.data.weeklyFocus.map((point) => <span key={point.date} className="min-w-0 flex-1 rounded-t-sm bg-moss/70" style={{ height: `${Math.max(8, Math.min(100, point.minutes * 2))}%` }} title={`${point.date}: ${point.minutes} phút`} />)}</div>
+        </Link>
       </section>
 
       <section className="mt-8 border-t border-line pt-6">

@@ -15,6 +15,8 @@ const RegisterPage = lazy(() => import('../pages/RegisterPage').then((module) =>
 const FocusPage = lazy(() => import('../pages/FocusPage').then((module) => ({ default: module.FocusPage })))
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage').then((module) => ({ default: module.ProjectsPage })))
 const ProjectDetailPage = lazy(() => import('../pages/ProjectDetailPage').then((module) => ({ default: module.ProjectDetailPage })))
+const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage').then((module) => ({ default: module.AnalyticsPage })))
+const SettingsPage = lazy(() => import('../pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +39,8 @@ export const router = createBrowserRouter([
         { path: '/focus', element: <RouteBoundary><FocusPage /></RouteBoundary> },
         { path: '/projects', element: <RouteBoundary><ProjectsPage /></RouteBoundary> },
         { path: '/projects/:id', element: <RouteBoundary><ProjectDetailPage /></RouteBoundary> },
+        { path: '/analytics', element: <RouteBoundary><AnalyticsPage /></RouteBoundary> },
+        { path: '/settings', element: <RouteBoundary><SettingsPage /></RouteBoundary> },
       ],
     }],
   },

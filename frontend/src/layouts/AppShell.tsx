@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, CircleDot, FolderKanban, LogOut, Menu, TimerReset, X } from 'lucide-react'
+import { BarChart3, CheckCircle2, CircleDot, FolderKanban, LogOut, Menu, Settings, TimerReset, X } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { Logo } from '../components/Logo'
@@ -15,11 +15,12 @@ const navItems = [
   { to: '/habits', label: 'Thói quen', icon: CheckCircle2 },
   { to: '/focus', label: 'Tập trung', icon: TimerReset },
   { to: '/projects', label: 'Dự án', icon: FolderKanban },
+  { to: '/analytics', label: 'Phân tích', icon: BarChart3 },
 ]
 
 function NavItems({ onNavigate, mobile = false }: { onNavigate?: () => void; mobile?: boolean }) {
   return (
-    <nav aria-label="Điều hướng chính" className={mobile ? 'grid grid-cols-4' : 'space-y-1'}>
+    <nav aria-label="Điều hướng chính" className={mobile ? 'grid grid-cols-5' : 'space-y-1'}>
       {navItems.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
@@ -82,6 +83,9 @@ export function AppShell() {
               <p className="truncate text-sm font-semibold">{user?.name || 'BeFocus'}</p>
               <p className="truncate text-xs text-ink-soft">{user?.email}</p>
             </div>
+            <NavLink to="/settings" className="flex h-11 w-11 items-center justify-center rounded-control text-ink-soft hover:bg-paper-raised hover:text-ink" aria-label="Cài đặt">
+              <Settings className="h-4 w-4" aria-hidden="true" />
+            </NavLink>
             <button
               type="button"
               onClick={() => logout.mutate()}
@@ -111,6 +115,7 @@ export function AppShell() {
           <div id="mobile-account-menu" className="absolute right-4 top-14 w-[min(300px,calc(100vw-2rem))] rounded-surface border border-line bg-paper-raised p-4 shadow-dialog">
             <p className="font-semibold">{user?.name}</p>
             <p className="text-sm text-ink-soft">{user?.email}</p>
+            <NavLink to="/settings" onClick={() => setMenuOpen(false)} className="mt-4 flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-semibold text-ink-soft hover:bg-paper"><Settings className="h-4 w-4" aria-hidden="true" />Cài đặt</NavLink>
             <Button className="mt-4 w-full" variant="secondary" onClick={() => logout.mutate()} loading={logout.isPending}>
               <LogOut className="h-4 w-4" />
               Đăng xuất

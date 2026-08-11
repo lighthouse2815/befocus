@@ -231,6 +231,8 @@ export interface Settings {
   sessionsBeforeLongBreak: number
   timezone: string
   notificationsEnabled: boolean
+  browserNotifications?: boolean
+  inAppNotifications?: boolean
   theme: 'LIGHT' | 'DARK' | 'SYSTEM' | 'light' | 'dark' | 'system'
 }
 
