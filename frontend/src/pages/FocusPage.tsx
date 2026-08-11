@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Ban,
@@ -26,6 +26,7 @@ import { useTimerTicker } from '../hooks/useTimerTicker'
 import { focusKeys, focusService } from '../services/focus'
 import { habitKeys, habitsService } from '../services/habits'
 import { projectKeys, projectsService } from '../services/projects'
+import { settingsService } from '../services/settings'
 import { getApiError } from '../services/api'
 import { formatTimer, useTimerStore } from '../store/timerStore'
 import type { FocusSession, FocusStatus, InterruptionKind, Project, Task } from '../types'
@@ -78,6 +79,7 @@ export function FocusPage() {
   const [interruptionNote, setInterruptionNote] = useState('')
 
   const activeQuery = useQuery({ queryKey: focusKeys.active, queryFn: focusService.active })
+  const settingsQuery = useQuery({ queryKey: ['settings'], queryFn: settingsService.get })
   const habitsQuery = useQuery({ queryKey: habitKeys.list(false), queryFn: () => habitsService.list(false) })
   const projectsQuery = useQuery({ queryKey: projectKeys.list, queryFn: projectsService.list })
   const tasksQuery = useQuery({
@@ -86,6 +88,10 @@ export function FocusPage() {
     enabled: Boolean(projectId),
   })
   const recentQuery = useQuery({ queryKey: focusKeys.recent(10), queryFn: () => focusService.recent(10) })
+
+  useEffect(() => {
+    if (settingsQuery.data) setDuration(settingsQuery.data.defaultFocusMinutes)
+  }, [settingsQuery.data])
 
   const durationHabits = useMemo(
     () => (habitsQuery.data ?? []).filter(
@@ -136,7 +142,12 @@ export function FocusPage() {
   const complete = useMutation({
     mutationFn: (sessionId: string) => focusService.complete(sessionId),
     onSuccess: (completed) => {
-      completeFocus(completed.id)
+      completeFocus(
+        completed.id,
+        settingsQuery.data?.defaultBreakMinutes,
+        settingsQuery.data?.longBreakMinutes,
+        settingsQuery.data?.sessionsBeforeLongBreak,
+      )
       queryClient.setQueryData(focusKeys.active, null)
       refreshAfterTerminalState()
       notify(`Đã ghi nhận ${completed.actualDurationMinutes ?? 0} phút tập trung.`, 'success')

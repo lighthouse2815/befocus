@@ -183,9 +183,9 @@ export function DashboardPage() {
         </Link>
         <Link to="/projects" className="group rounded-surface border border-line bg-paper-raised p-5 hover:border-moss">
           <div className="flex items-center justify-between gap-3"><ListTodo className="h-5 w-5 text-moss" aria-hidden="true" /><ArrowRight className="h-4 w-4 text-ink-faint transition-transform group-hover:translate-x-1" aria-hidden="true" /></div>
-          <p className="mt-5 text-sm text-ink-soft">Việc đã hoàn thành</p>
+          <p className="mt-5 text-sm text-ink-soft">Việc hôm nay</p>
           <p className="mt-1 font-mono text-3xl font-semibold">{dashboard.data.tasks.completed}<span className="ml-1 font-sans text-sm font-medium text-ink-soft">/ {dashboard.data.tasks.total}</span></p>
-          <p className="mt-2 text-xs text-ink-soft">Trong toàn bộ dự án</p>
+          <p className="mt-2 text-xs text-ink-soft">Theo hạn hôm nay</p>
         </Link>
         <Link to="/analytics" className="group rounded-surface border border-line bg-paper-raised p-5 hover:border-moss">
           <div className="flex items-center justify-between gap-3"><BarChart3 className="h-5 w-5 text-moss" aria-hidden="true" /><ArrowRight className="h-4 w-4 text-ink-faint transition-transform group-hover:translate-x-1" aria-hidden="true" /></div>

@@ -10,4 +10,6 @@ export const authService = {
     await api.post('/auth/logout', { refreshToken })
   },
   me: async () => (await api.get<User>('/users/me')).data,
+  updateProfile: async (payload: { name: string; timezone: string }) =>
+    (await api.put<User>('/users/me', payload)).data,
 }

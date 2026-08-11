@@ -93,9 +93,9 @@ public class AnalyticsService {
         }
         List<FocusSession> completedToday = completedSessions(userId, today, today);
         int focusMinutes = totalMinutes(completedToday);
-        long totalTasks = taskRepository.countByUserIdAndStatus(userId, TaskStatus.PENDING)
-                + taskRepository.countByUserIdAndStatus(userId, TaskStatus.COMPLETED);
-        long completedTasks = taskRepository.countByUserIdAndStatus(userId, TaskStatus.COMPLETED);
+        long totalTasks = taskRepository.countByUserIdAndDueDateAndStatus(userId, today, TaskStatus.PENDING)
+                + taskRepository.countByUserIdAndDueDateAndStatus(userId, today, TaskStatus.COMPLETED);
+        long completedTasks = taskRepository.countByUserIdAndDueDateAndStatus(userId, today, TaskStatus.COMPLETED);
         List<DashboardResponse.WeeklyFocusPoint> weekly = new ArrayList<>();
         for (int i = 6; i >= 0; i--) {
             LocalDate date = today.minusDays(i);
@@ -183,7 +183,19 @@ public class AnalyticsService {
             heatmap.add(new HabitAnalyticsResponse.HeatmapCell(date.toString(), complete, total, total > 0 && complete == total));
         }
         double rate = scheduledTotal == 0 ? 0 : completedTotal * 100d / scheduledTotal;
-        return new HabitAnalyticsResponse(rate, current, longest, rate, daily, List.of(), heatmap, habitBreakdowns);
+        Map<LocalDate, int[]> weeklyTotals = new LinkedHashMap<>();
+        for (HabitAnalyticsResponse.DailyProgressPoint point : daily) {
+            LocalDate date = LocalDate.parse(point.date());
+            LocalDate week = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            int[] totals = weeklyTotals.computeIfAbsent(week, ignored -> new int[2]);
+            totals[0] += point.completed();
+            totals[1] += point.total();
+        }
+        List<HabitAnalyticsResponse.WeeklyProgressPoint> weekly = weeklyTotals.entrySet().stream()
+                .map(entry -> new HabitAnalyticsResponse.WeeklyProgressPoint(entry.getKey().toString(), entry.getValue()[0],
+                        entry.getValue()[1], entry.getValue()[1] == 0 ? 0 : entry.getValue()[0] * 100d / entry.getValue()[1]))
+                .toList();
+        return new HabitAnalyticsResponse(rate, current, longest, rate, daily, weekly, heatmap, habitBreakdowns);
     }
 
     private List<AnalyticsBreakdown> breakdown(List<FocusSession> sessions, Function<FocusSession, String> keyFunction) {

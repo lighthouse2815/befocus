@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useToast } from './Toast'
 import { focusKeys, focusService } from '../services/focus'
 import { habitKeys } from '../services/habits'
+import { settingsService } from '../services/settings'
 import { useTimerTicker } from '../hooks/useTimerTicker'
 import { useTimerStore } from '../store/timerStore'
 
@@ -23,11 +24,17 @@ export function FocusSessionSync() {
     queryKey: focusKeys.active,
     queryFn: focusService.active,
   })
+  const settingsQuery = useQuery({ queryKey: ['settings'], queryFn: settingsService.get })
 
   const complete = useMutation({
     mutationFn: (sessionId: string) => focusService.complete(sessionId),
     onSuccess: (completed) => {
-      completeFocus(completed.id)
+      completeFocus(
+        completed.id,
+        settingsQuery.data?.defaultBreakMinutes,
+        settingsQuery.data?.longBreakMinutes,
+        settingsQuery.data?.sessionsBeforeLongBreak,
+      )
       queryClient.setQueryData(focusKeys.active, null)
       void queryClient.invalidateQueries({ queryKey: focusKeys.all })
       void queryClient.invalidateQueries({ queryKey: habitKeys.all })
