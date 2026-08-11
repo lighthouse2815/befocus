@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --paper: #f6f5f0;
+  --paper-raised: #fffefa;
+  --ink: #1e2924;
+  --ink-soft: #59645e;
+  --line: #d9dfd8;
+  --line-strong: #b9c5bb;
+  --moss: #2f6f59;
+  --moss-dark: #1f503e;
+  --moss-wash: #e6f0e9;
+  --moss-mid: #97bca9;
+  --moss-strong: #5d947b;
+  --clay: #c96843;
+  --clay-wash: #f8e9e1;
+  --amber: #a96c13;
+  --amber-wash: #fff1d2;
+  --danger: #b83a3a;
+  --focus-ring: #1b78a8;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #17201c;
+  --paper-raised: #1d2823;
+  --ink: #edf2ed;
+  --ink-soft: #aebbb2;
+  --line: #33423a;
+  --line-strong: #52635a;
+  --moss: #7db59a;
+  --moss-dark: #b0d3bf;
+  --moss-wash: #263d32;
+  --moss-mid: #3f644f;
+  --moss-strong: #5f8d70;
+  --clay: #e28a67;
+  --clay-wash: #462d25;
+  --amber: #e0ae5f;
+  --amber-wash: #41351e;
+  --danger: #f17b7b;
+  --focus-ring: #7cc4eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--moss-wash);
+  color: var(--ink);
+}
+
+@layer components {
+  .field-label {
+    @apply mb-1.5 block text-sm font-semibold text-ink;
+  }
+
+  .field-control {
+    @apply min-h-11 w-full rounded-control border border-line-strong bg-paper-raised px-3 py-2 text-ink transition-colors duration-150 placeholder:text-ink-soft hover:border-ink-soft focus:border-moss focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)];
+  }
+
+  .field-error {
+    @apply mt-1 text-sm text-danger;
+  }
+
+  .quiet-rule {
+    @apply border-t border-line;
+  }
+
+  .surface {
+    @apply rounded-surface border border-line bg-paper-raised;
+  }
+
+  .section-kicker {
+    @apply text-xs font-bold uppercase tracking-[0.14em] text-ink-soft;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
