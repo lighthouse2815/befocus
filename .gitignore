@@ -13,5 +13,6 @@ target/
 docker-data/
 playwright-report/
 test-results/
+blob-report/
+e2e/.cache/
 *.log
-

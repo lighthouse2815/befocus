@@ -28,7 +28,7 @@ Both return `{ "user": User, "accessToken": string, "refreshToken": string }`.
 
 `POST /auth/logout` invalidates the supplied refresh token and returns `204`.
 
-`GET /users/me` returns `User`.
+`GET /users/me` returns `User`. `PUT /users/me` accepts `{ "name", "timezone" }` and returns the updated user profile; email changes are intentionally excluded until a verified-email flow exists.
 
 ```json
 { "id": "uuid", "name": "Mai", "email": "mai@example.com", "timezone": "Asia/Ho_Chi_Minh" }
@@ -47,13 +47,17 @@ Both return `{ "user": User, "accessToken": string, "refreshToken": string }`.
   "type": "BOOLEAN | COUNT | DURATION",
   "targetValue": 60,
   "unit": "minutes",
-  "scheduleType": "DAILY | WEEKDAYS | TIMES_PER_WEEK",
+  "scheduleType": "DAILY | WEEKDAYS | TIMES_PER_WEEK | INTERVAL",
   "weekdays": [1, 3, 5],
   "timesPerWeek": null,
+  "intervalDays": null,
+  "scheduleStartDate": null,
   "reminderTime": "19:30",
   "color": "moss"
 }
 ```
+
+`INTERVAL` is the custom schedule: every `intervalDays` (2–30) beginning on `scheduleStartDate`. Streak calculations only evaluate scheduled occurrences; non-scheduled calendar days never break a streak.
 
 `GET /habits/{id}` returns a habit with `todayProgress`, `todayTarget`, `currentStreak`, `longestStreak`, and `entries` for the requested range.
 
@@ -102,4 +106,3 @@ State transitions are `POST /focus-sessions/{id}/pause`, `/resume`, `/complete`,
 ## Settings
 
 `GET /settings` and `PUT /settings` support `defaultFocusMinutes`, `defaultBreakMinutes`, `longBreakMinutes`, `sessionsBeforeLongBreak`, `timezone`, `notificationsEnabled`, and `theme`.
-

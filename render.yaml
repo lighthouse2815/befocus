@@ -1,0 +1,45 @@
+databases:
+  - name: befocus-db
+    databaseName: befocus
+    user: befocus
+    plan: free
+
+services:
+  - type: web
+    name: befocus-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /actuator/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: befocus-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_TTL_SECONDS
+        value: "1800"
+      - key: JWT_REFRESH_TTL_SECONDS
+        value: "1209600"
+      - key: APP_TIMEZONE
+        value: UTC
+      - key: SEED_ENABLED
+        value: "false"
+
+  - type: web
+    name: befocus-web
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: BACKEND_HOSTPORT
+        fromService:
+          type: web
+          name: befocus-api
+          property: hostport
