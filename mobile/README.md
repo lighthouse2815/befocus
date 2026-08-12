@@ -116,6 +116,8 @@ Không ghi “verified on Android/iOS” cho đến khi ma trận này thực s�
 - Bản web chỉ để smoke-check UI/bundle, không có SecureStore/native notification parity.
 - Store submission/signing credentials không nằm trong repository và chỉ được dùng qua EAS credential service hoặc CI secret.
 
+Bản ghi rà soát token storage, error handling, secret scan và dependency advisories nằm tại [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md).
+
 ## Tái tạo branding
 
 Icon/splash là bộ nhận diện FocusFlow tự sở hữu, không dùng asset Expo mẫu. Có thể tái tạo các PNG bằng PowerShell trên Windows:
