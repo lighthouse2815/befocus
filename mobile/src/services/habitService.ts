@@ -4,6 +4,7 @@ import type { Habit, HabitEntry, HabitPayload } from '@/types'
 export const habitKeys = {
   all: ['habits'] as const,
   list: (includeArchived = false) => ['habits', 'list', includeArchived] as const,
+  detailRoot: (id: string) => ['habits', 'detail', id] as const,
   detail: (id: string, from?: string, to?: string) => ['habits', 'detail', id, from, to] as const,
 }
 

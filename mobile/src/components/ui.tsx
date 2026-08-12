@@ -1,5 +1,5 @@
 import { forwardRef } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type PressableProps, type TextInputProps, type ViewProps } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type PressableProps, type StyleProp, type TextInputProps, type ViewProps, type ViewStyle } from 'react-native'
 import { colors, radii, spacing, surface, touchTarget, typography } from '@/constants/theme'
 
 type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger'
@@ -41,12 +41,13 @@ interface TextFieldProps extends TextInputProps {
   label: string
   error?: string
   hint?: string
+  containerStyle?: StyleProp<ViewStyle>
 }
 
-export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField({ label, error, hint, style, ...props }, ref) {
+export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField({ label, error, hint, containerStyle, style, ...props }, ref) {
   const errorId = error ? `${label}-error` : undefined
   return (
-    <View style={styles.fieldGroup}>
+    <View style={[styles.fieldGroup, containerStyle]}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
         ref={ref}

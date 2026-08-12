@@ -1,5 +1,3 @@
-import { PlaceholderScreen } from '@/screens/PlaceholderScreen'
+import { HabitsScreen } from '@/screens/HabitsScreen'
 
-export default function HabitsRoute() {
-  return <PlaceholderScreen title="Thói quen" description="Theo dõi Boolean, Count và Duration habit từ cùng dữ liệu với web." />
-}
+export default HabitsScreen

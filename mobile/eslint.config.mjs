@@ -5,7 +5,7 @@ import reactNative from 'eslint-plugin-react-native'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['node_modules/**', '.expo/**', 'dist/**', 'coverage/**'] },
+  { ignores: ['node_modules/**', '.expo/**', 'dist/**', 'dist-web-check/**', 'coverage/**'] },
   js.configs.recommended,
   {
     files: ['**/*.{js,cjs,mjs}'],

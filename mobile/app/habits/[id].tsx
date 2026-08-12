@@ -1,0 +1,7 @@
+import { useLocalSearchParams } from 'expo-router'
+import { HabitDetailScreen } from '@/screens/HabitDetailScreen'
+
+export default function HabitDetailRoute() {
+  const { id } = useLocalSearchParams<{ id: string }>()
+  return <HabitDetailScreen id={id} />
+}
