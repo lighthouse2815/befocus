@@ -3,6 +3,8 @@ package com.befocus.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,8 +17,10 @@ import com.befocus.dto.response.AuthResponse;
 import com.befocus.entity.User;
 import com.befocus.exception.ApiException;
 import com.befocus.exception.ErrorCode;
+import com.befocus.repository.RefreshTokenRepository;
 import com.befocus.repository.UserRepository;
 import com.befocus.security.JwtService;
+import com.befocus.util.TokenUtil;
 
 @SpringBootTest
 @Transactional
@@ -25,6 +29,7 @@ class AuthServiceIntegrationTest {
     @Autowired private UserRepository userRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JwtService jwtService;
+    @Autowired private RefreshTokenRepository refreshTokenRepository;
 
     @Test
     void registerHashesThePasswordAndLoginIssuesAValidUserScopedSession() {
@@ -58,6 +63,19 @@ class AuthServiceIntegrationTest {
 
         authService.logout(rotated.refreshToken());
         assertThatThrownBy(() -> authService.refresh(rotated.refreshToken()))
+                .isInstanceOfSatisfying(ApiException.class,
+                        error -> assertThat(error.getCode()).isEqualTo(ErrorCode.UNAUTHORIZED));
+    }
+
+    @Test
+    void rejectsExpiredRefreshTokens() {
+        AuthResponse registered = authService.register(new RegisterRequest(
+                "Expired Refresh", "auth-expired-refresh@example.com", "StrongPass123"));
+        var stored = refreshTokenRepository.findByTokenHash(TokenUtil.sha256(registered.refreshToken())).orElseThrow();
+        stored.setExpiresAt(Instant.EPOCH);
+        refreshTokenRepository.saveAndFlush(stored);
+
+        assertThatThrownBy(() -> authService.refresh(registered.refreshToken()))
                 .isInstanceOfSatisfying(ApiException.class,
                         error -> assertThat(error.getCode()).isEqualTo(ErrorCode.UNAUTHORIZED));
     }

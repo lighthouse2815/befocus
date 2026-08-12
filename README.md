@@ -189,5 +189,5 @@ Vercel and Railway alternatives, required environment variables, migration behav
 ## Operational limitations
 
 - The optional AI coach is intentionally excluded; insights are deterministic and require enough real observations before presenting a conclusion.
-- Browser notifications depend on user permission and browser support; denial does not block the rest of the product.
+- In-app and browser reminders are evaluated while BeFocus is open. Browser notifications depend on user permission and browser support; denial does not block the rest of the product. This release does not install a background service worker, so it does not promise reminders after every BeFocus tab has been closed.
 - Free hosting plans may sleep, expire databases, or impose build/runtime quotas. Use a paid persistent database and backups for real production data.

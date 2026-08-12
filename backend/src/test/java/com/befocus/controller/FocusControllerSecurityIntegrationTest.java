@@ -4,6 +4,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,12 +18,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.befocus.dto.request.RegisterRequest;
 import com.befocus.dto.response.AuthResponse;
+import com.befocus.security.JwtService;
 import com.befocus.service.AuthService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 class FocusControllerSecurityIntegrationTest {
+    private static final String TEST_JWT_SECRET = "test-secret-that-is-long-enough-for-hmac-sha-256-signatures";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -74,5 +81,33 @@ class FocusControllerSecurityIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.errors.plannedDurationMinutes").exists());
+    }
+
+    @Test
+    void rejectsMalformedAndExpiredAccessTokens() throws Exception {
+        AuthResponse owner = authService.register(new RegisterRequest(
+                "Expired Owner", "focus-expired-token@example.com", "StrongPass123"));
+        String payload = """
+                {
+                  "plannedDurationMinutes": 25
+                }
+                """;
+        JwtService expiredJwtService = new JwtService(TEST_JWT_SECRET, 60,
+                Clock.fixed(Instant.parse("2020-01-01T00:00:00Z"), ZoneOffset.UTC));
+        String expiredToken = expiredJwtService.createAccessToken(owner.user().id(), owner.user().email());
+
+        mockMvc.perform(post("/api/v1/focus-sessions")
+                        .header("Authorization", "Bearer malformed-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        mockMvc.perform(post("/api/v1/focus-sessions")
+                        .header("Authorization", "Bearer " + expiredToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 }

@@ -2,19 +2,27 @@
 
 This file maps the product specification to authoritative evidence. A green build alone is not enough: browser behavior, persistence, authorization, migrations, and deployment health must all be observed.
 
+## Release record — 2026-08-12
+
+- Verified implementation/runtime commit: `4a41b3bdefa74630de7500f2c1737e7ed9267f10`. The following verification-only commit adds security tests and this release record without changing runtime code.
+- Runtime: Java 21, Node.js 22 image, PostgreSQL 16.14, Chromium via Playwright.
+- Primary deployed surface: local production Compose stack at `http://127.0.0.1:5173` with frontend, backend, and PostgreSQL healthy.
+- Public smoke surface: an ephemeral Cloudflare Quick Tunnel was verified for both the frontend and `/api/v1/auth/login`. Its generated URL is intentionally not treated as stable production hosting because it has no uptime guarantee and depends on the local stack remaining online.
+- Stable provider deployment remains an operator step because no authenticated Render, Railway, Vercel, or Cloudflare account was available in this environment. `render.yaml` is the full-stack deployment contract.
+
 ## Automated gates
 
 | Requirement | Evidence | Command / CI job | Current status |
 | --- | --- | --- | --- |
-| Frontend strict compilation and production bundle | TypeScript/Vite exit code and emitted `dist` | `cd frontend && npm run build`; CI `frontend` | Awaiting final integrated run |
-| Frontend lint | ESLint exit code | `cd frontend && npm run lint`; CI `frontend` | Awaiting final integrated run |
-| Frontend component/forms/timer/auth tests | Vitest report | `cd frontend && npm test`; CI `frontend` | Awaiting final integrated run |
-| Backend unit/service/security/integration tests | Maven Surefire/Failsafe reports | `cd backend && ./mvnw verify`; CI `backend` | Awaiting final integrated run |
-| Backend production package | Spring Boot JAR from Maven verify | `cd backend && ./mvnw verify`; CI `backend` | Awaiting final integrated run |
-| Compose model | Compose parser accepts all interpolation/dependencies | `docker compose config --quiet`; CI `compose` | Awaiting final integrated run |
-| PostgreSQL migration from empty database | Healthy API after fresh Compose volume | `docker compose down -v && docker compose up --build --wait` | Awaiting final integrated run |
-| API and frontend health | HTTP 2xx responses | `node scripts/wait-for-url.mjs ...`; CI `compose` | Awaiting final integrated run |
-| Required browser flows | Playwright HTML report/traces | `cd e2e && npm test`; CI `compose` | Awaiting final integrated run |
+| Frontend strict compilation and production bundle | TypeScript/Vite exit code and emitted `dist` | `cd frontend && npm run build`; CI `frontend` | PASS — 2,626 modules transformed |
+| Frontend lint | ESLint exit code | `cd frontend && npm run lint`; CI `frontend` | PASS — no ESLint errors |
+| Frontend component/forms/timer/auth tests | Vitest report | `cd frontend && npm test`; CI `frontend` | PASS — 9 files, 22 tests |
+| Backend unit/service/security/integration tests | Maven Surefire/Failsafe reports | `cd backend && ./mvnw verify`; CI `backend` | PASS — 36 tests, 0 failures/errors |
+| Backend production package | Spring Boot JAR from Maven verify | `cd backend && ./mvnw verify`; CI `backend` | PASS — executable JAR repackaged |
+| Compose model | Compose parser accepts all interpolation/dependencies | `docker compose config --quiet`; CI `compose` | PASS |
+| PostgreSQL migration from empty database | Healthy API after a fresh isolated Compose volume | `docker compose -p befocus-verify-4a41b3b up --build --wait` | PASS — V1 applied to PostgreSQL 16.14; isolated volume removed afterward |
+| API and frontend health | HTTP 2xx responses | `/actuator/health`, `/health`, and Compose health checks | PASS — all three services healthy |
+| Required browser flows | Playwright report | `cd e2e && npm test`; CI `compose` | PASS — 3 Chromium flows against the real Compose API/PostgreSQL |
 
 ## Required E2E flows
 
@@ -39,7 +47,7 @@ The Maven report must contain focused tests for:
 - completed linked focus session -> duration habit progress/completion;
 - analytics aggregation, interruption counts, and insufficient-sample insights.
 
-Source presence is not sufficient evidence; the named tests must execute successfully.
+Executed coverage is provided by `AuthServiceIntegrationTest`, `HabitControllerSecurityIntegrationTest`, `FocusControllerSecurityIntegrationTest`, `HabitScheduleServiceTest`, `HabitServiceIntegrationTest`, `FocusServiceIntegrationTest`, `ProjectTaskServiceIntegrationTest`, and `AnalyticsSettingsServiceIntegrationTest`. Together they cover malformed/expired access tokens, expired/rotated/revoked refresh tokens, owner scoping, validation envelopes, schedule-aware streaks, timezone boundaries, timestamp/state transitions, duplicate active-session prevention, linked duration progress, cancellation/interruption aggregation, and honest empty analytics.
 
 ## Manual release smoke test
 
@@ -56,6 +64,16 @@ Run on the deployed HTTPS URL with a new account:
 
 Record the deployed URL, commit SHA, date, test account (never its password), browser versions, and any provider logs in the release record.
 
+Observed browser QA for this release:
+
+- Dashboard, Analytics, and Settings rendered from real persisted API data at desktop width.
+- Analytics exposed accessible labels for project/task/habit breakdowns and Recharts timing charts.
+- A 390 x 844 mobile viewport had no horizontal overflow; the bottom navigation and account menu were usable.
+- Browser console inspection returned no warnings or errors during the inspected routes.
+- The seeded account `demo@befocus.local` authenticated successfully locally and through the public HTTPS smoke surface; credentials remain development-only.
+
 ## Deployment evidence
 
-Provider-ready manifests are present, but no provider credential variables or authenticated deployment CLI were available on this workstation during initial setup. A successful live provider deployment therefore remains unproven until the Render/Railway/Vercel dashboard or API reports healthy services and the manual smoke test is recorded.
+The implementation commit was pushed successfully and `git ls-remote origin refs/heads/main` returned its full SHA before the verification-only addendum. The local production Compose deployment and temporary public HTTPS smoke deployment are proven. GitHub Actions could not be read anonymously because the repository returned 404 outside its authenticated context; no CI result is inferred from that response.
+
+Provider-ready manifests are present, but no provider credential variables or authenticated deployment CLI were available on this workstation. A durable live provider deployment therefore remains unproven until the Render/Railway/Vercel/Cloudflare dashboard or API reports healthy services. Do not treat an account-less Quick Tunnel as permanent production hosting.
