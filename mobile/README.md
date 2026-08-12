@@ -87,7 +87,7 @@ Thiết lập `EXPO_PUBLIC_API_URL` trong EAS Environment tương ứng (`develo
 - Timer hiển thị từ timestamp `expectedEndAt` của server, không lấy số lần `setInterval` làm nguồn sự thật.
 - Active session được truy vấn lại khi app mở/foreground/reconnect; không tự tạo session thứ hai.
 - Start/resume lên lịch local notification đúng timestamp; pause/cancel/complete huỷ request cũ. Break dùng timestamp cục bộ tối thiểu và có thể phục hồi sau app restart.
-- Reminder DAILY/WEEKDAYS dùng recurring notification. `TIMES_PER_WEEK` và `INTERVAL` chỉ lên lịch lần kế tiếp nếu habit thuộc ngày hiện tại, vì hệ điều hành không biểu diễn chính xác quy tắc backend này; app đồng bộ lại khi foreground.
+- Reminder DAILY/WEEKDAYS dùng recurring notification khi timezone hồ sơ trùng timezone thiết bị. Nếu hai timezone khác nhau, app chuyển sang absolute timestamps theo IANA timezone trong một rolling horizon; INTERVAL cũng được tính theo ngày lịch tuyệt đối. `TIMES_PER_WEEK` chỉ được backend quyết định cho ngày hiện tại vì còn phụ thuộc tiến độ trong tuần; app đồng bộ lại khi foreground.
 - Khi mất mạng, dữ liệu cache vẫn hiển thị và banner giải thích rõ. Mutation cần server báo lỗi có thể retry; không ghi tiến độ giả cục bộ.
 - Logout cố gọi backend, sau đó luôn xoá SecureStore, cache timer, lịch notification và TanStack Query cache trên thiết bị.
 
@@ -117,6 +117,8 @@ Không ghi “verified on Android/iOS” cho đến khi ma trận này thực s�
 - Store submission/signing credentials không nằm trong repository và chỉ được dùng qua EAS credential service hoặc CI secret.
 
 Bản ghi rà soát token storage, error handling, secret scan và dependency advisories nằm tại [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md).
+
+Đối chiếu implementation và release gate theo từng mốc M1–M11 nằm tại [`docs/COMPLETION_AUDIT.md`](docs/COMPLETION_AUDIT.md). GitHub Actions chạy typecheck, lint, test, Expo dependency check, Expo Doctor và Android Hermes export mà không khởi động emulator.
 
 ## Tái tạo branding
 

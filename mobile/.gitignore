@@ -6,6 +6,7 @@ node_modules/
 # Expo
 .expo/
 dist/
+dist-ios/
 dist-web-check/
 dist-ios-check/
 web-build/

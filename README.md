@@ -10,6 +10,7 @@ BeFocus is a full-stack personal productivity application that connects habit tr
 - Projects and tasks linked to focus sessions.
 - A practical dashboard and server-computed focus/habit analytics.
 - Responsive React UI with accessible states, real API data, and no production seed data.
+- Expo Router mobile client for Android/iOS with secure token storage, timestamp-derived focus lifecycle, and local notifications.
 - PostgreSQL migrations, Docker Compose, CI, Playwright E2E coverage, OpenAPI, and deployment manifests.
 
 ## Quick start with Docker
@@ -79,6 +80,17 @@ npm run dev
 
 For native frontend development, set `VITE_API_URL=http://localhost:8080/api/v1` if the Vite development proxy is not being used.
 
+Run the mobile client on a physical device from a third terminal:
+
+```powershell
+cd mobile
+npm ci
+Copy-Item .env.example .env
+npm start
+```
+
+Set `EXPO_PUBLIC_API_URL` in `mobile/.env` to the LAN or public HTTPS address of the backend host. Do not use `localhost` for a physical phone. The project intentionally does not use an emulator or simulator; see the [mobile runbook](mobile/README.md) for Expo Go, development-build, notification, and device-QA instructions.
+
 ## Environment configuration
 
 Copy `.env.example` to `.env` for Compose. Never commit `.env` or real secrets.
@@ -104,15 +116,16 @@ Generate a production secret with a password manager or a cryptographically secu
 ## Architecture
 
 ```text
-Browser
-  -> React / Vite / Nginx (frontend, :5173 locally)
-       -> /api proxy
-            -> Spring Boot modular monolith (backend, :8080)
-                 -> Spring Data JPA + Flyway
-                      -> PostgreSQL 16
+Browser -> React / Vite / Nginx (frontend, :5173 locally) -> /api proxy --+
+Physical device -> React Native / Expo Router (mobile) -------------------+
+                                                                          |
+                                                                          v
+                                         Spring Boot modular monolith (backend, :8080)
+                                           -> Spring Data JPA + Flyway
+                                                -> PostgreSQL 16
 ```
 
-The backend follows `controller -> service -> repository -> PostgreSQL`; business rules stay in services and entities are not returned directly from HTTP controllers. The frontend keeps remote data in TanStack Query and uses Zustand only for appropriate client state such as authentication/timer presentation.
+The backend follows `controller -> service -> repository -> PostgreSQL`; business rules stay in services and entities are not returned directly from HTTP controllers. Both clients keep remote data in TanStack Query and use Zustand only for appropriate client state such as authentication and timer presentation. Mobile calls the same versioned REST API directly; it does not duplicate backend business rules or maintain a second source of truth.
 
 Focus timers use server timestamps (`startedAt`, `expectedEndAt`) as the source of truth. The browser derives the remaining time from the current clock, so tab throttling or refresh does not create a second session or corrupt the countdown.
 
@@ -123,10 +136,11 @@ More detail: [architecture](docs/ARCHITECTURE.md) and [API contract](docs/API_CO
 ```text
 backend/                 Spring Boot API, Flyway migrations, backend tests
 frontend/                React application, component/unit tests, Nginx image
+mobile/                  Expo Router Android/iOS client, tests, EAS config, device-QA runbook
 e2e/                     Playwright browser flows
 docs/                    Architecture, API, database, deployment, verification
 scripts/                 Local/CI verification and readiness helpers
-.github/workflows/ci.yml Frontend, backend, Compose, and E2E CI
+.github/workflows/ci.yml Frontend, mobile, backend, Compose, and E2E CI
 docker-compose.yml       PostgreSQL + backend + frontend local production stack
 render.yaml              Render Blueprint for database and both web services
 vercel.json              Frontend-only Vercel build configuration

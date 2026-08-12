@@ -12,7 +12,7 @@ Review date: 2026-08-13
 - Notification deep links use an explicit internal route allowlist; arbitrary payload paths are ignored.
 - API errors map network/auth/not-found/server cases to actionable user text and reject Java exception/stack-trace-shaped messages.
 - App-owned destructive actions require confirmation; repository signing keys and store credentials are ignored and absent.
-- Live backend health returned `UP`, and all 13 mobile API contract roots were present in the running OpenAPI document at review time.
+- Live backend health returned `UP`, and all 14 static endpoint patterns used by mobile (including refresh) were present in the running OpenAPI document at review time.
 
 ## Dependency audit
 
