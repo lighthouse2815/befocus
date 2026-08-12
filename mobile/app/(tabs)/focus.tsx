@@ -1,5 +1,3 @@
-import { PlaceholderScreen } from '@/screens/PlaceholderScreen'
+import { FocusScreen } from '@/screens/FocusScreen'
 
-export default function FocusRoute() {
-  return <PlaceholderScreen title="Tập trung" description="Timer dùng timestamp server, không dùng số tick làm nguồn sự thật." />
-}
+export default FocusScreen

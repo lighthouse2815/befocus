@@ -1,6 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { ApiConfigurationError, apiBaseUrl } from '@/config/env'
 import { useAuthStore } from '@/store/authStore'
+import { useTimerStore } from '@/store/timerStore'
 import type { ApiErrorBody, AuthResponse } from '@/types'
 
 export const apiClient = axios.create({ baseURL: apiBaseUrl ?? undefined, timeout: 20_000 })
@@ -41,7 +42,10 @@ apiClient.interceptors.response.use(
       original.headers.Authorization = `Bearer ${session.accessToken}`
       return apiClient(original)
     } catch (refreshError) {
-      await useAuthStore.getState().clearSession()
+      await Promise.all([
+        useAuthStore.getState().clearSession(),
+        useTimerStore.getState().clear(),
+      ])
       return Promise.reject(refreshError)
     }
   },

@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useAppBootstrap } from '@/hooks/useAppBootstrap'
+import { FocusSessionSync } from './FocusSessionSync'
 
 function Bootstrap({ children }: { children: React.ReactNode }) {
   useAppBootstrap()
-  return children
+  return <><FocusSessionSync />{children}</>
 }
 
 export function AppProviders({ children }: { children: React.ReactNode }) {

@@ -4,6 +4,7 @@ import NetInfo from '@react-native-community/netinfo'
 import { focusManager, onlineManager, useQueryClient } from '@tanstack/react-query'
 import { userService } from '@/services/userService'
 import { useAuthStore } from '@/store/authStore'
+import { useTimerStore } from '@/store/timerStore'
 
 let networkConfigured = false
 
@@ -18,12 +19,13 @@ function configureNetworkTracking() {
 export function useAppBootstrap() {
   const queryClient = useQueryClient()
   const hydrate = useAuthStore((state) => state.hydrate)
+  const hydrateTimer = useTimerStore((state) => state.hydrate)
 
   useEffect(() => {
     configureNetworkTracking()
     let cancelled = false
     void (async () => {
-      await hydrate()
+      await Promise.all([hydrate(), hydrateTimer()])
       const auth = useAuthStore.getState()
       if (cancelled || auth.status !== 'authenticated') return
       try {
@@ -36,7 +38,7 @@ export function useAppBootstrap() {
     return () => {
       cancelled = true
     }
-  }, [hydrate])
+  }, [hydrate, hydrateTimer])
 
   useEffect(() => {
     function onAppStateChange(status: AppStateStatus) {
