@@ -3,7 +3,7 @@ import React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { router } from 'expo-router'
 import { Controller, useForm } from 'react-hook-form'
-import { Alert, Linking, Platform, StyleSheet, Switch, Text, View } from 'react-native'
+import { Alert, Linking, Platform, StyleSheet, Switch, Text, useWindowDimensions, View } from 'react-native'
 import { z } from 'zod'
 import { ChoiceField } from '@/components/ChoiceField'
 import { RouteHeader } from '@/components/RouteHeader'
@@ -63,6 +63,7 @@ function ProfileForm({ user }: { user: User }) {
 
 function PomodoroForm({ settings }: { settings: Settings }) {
   const queryClient = useQueryClient()
+  const compact = useWindowDimensions().width < 380
   const form = useForm<PomodoroFields>({
     resolver: zodResolver(pomodoroSchema),
     defaultValues: {
@@ -93,13 +94,13 @@ function PomodoroForm({ settings }: { settings: Settings }) {
   return (
     <Surface style={styles.formSurface}>
       <SectionHeader eyebrow="Nhịp mặc định" title="Pomodoro" />
-      <View style={styles.twoColumns}>
-        <Controller control={form.control} name="defaultFocusMinutes" render={({ field, fieldState }) => <TextField containerStyle={styles.column} label="Tập trung (phút)" value={String(field.value)} onBlur={field.onBlur} onChangeText={field.onChange} keyboardType="number-pad" error={fieldState.error?.message} />} />
-        <Controller control={form.control} name="defaultBreakMinutes" render={({ field, fieldState }) => <TextField containerStyle={styles.column} label="Nghỉ ngắn (phút)" value={String(field.value)} onBlur={field.onBlur} onChangeText={field.onChange} keyboardType="number-pad" error={fieldState.error?.message} />} />
+      <View style={[styles.twoColumns, compact ? styles.stackedColumns : null]}>
+        <Controller control={form.control} name="defaultFocusMinutes" render={({ field, fieldState }) => <TextField containerStyle={[styles.column, compact ? styles.fullColumn : null]} label="Tập trung (phút)" value={String(field.value)} onBlur={field.onBlur} onChangeText={field.onChange} keyboardType="number-pad" error={fieldState.error?.message} />} />
+        <Controller control={form.control} name="defaultBreakMinutes" render={({ field, fieldState }) => <TextField containerStyle={[styles.column, compact ? styles.fullColumn : null]} label="Nghỉ ngắn (phút)" value={String(field.value)} onBlur={field.onBlur} onChangeText={field.onChange} keyboardType="number-pad" error={fieldState.error?.message} />} />
       </View>
-      <View style={styles.twoColumns}>
-        <Controller control={form.control} name="longBreakMinutes" render={({ field, fieldState }) => <TextField containerStyle={styles.column} label="Nghỉ dài (phút)" value={String(field.value)} onBlur={field.onBlur} onChangeText={field.onChange} keyboardType="number-pad" error={fieldState.error?.message} />} />
-        <Controller control={form.control} name="sessionsBeforeLongBreak" render={({ field, fieldState }) => <TextField containerStyle={styles.column} label="Phiên trước nghỉ dài" value={String(field.value)} onBlur={field.onBlur} onChangeText={field.onChange} keyboardType="number-pad" error={fieldState.error?.message} />} />
+      <View style={[styles.twoColumns, compact ? styles.stackedColumns : null]}>
+        <Controller control={form.control} name="longBreakMinutes" render={({ field, fieldState }) => <TextField containerStyle={[styles.column, compact ? styles.fullColumn : null]} label="Nghỉ dài (phút)" value={String(field.value)} onBlur={field.onBlur} onChangeText={field.onChange} keyboardType="number-pad" error={fieldState.error?.message} />} />
+        <Controller control={form.control} name="sessionsBeforeLongBreak" render={({ field, fieldState }) => <TextField containerStyle={[styles.column, compact ? styles.fullColumn : null]} label="Phiên trước nghỉ dài" value={String(field.value)} onBlur={field.onBlur} onChangeText={field.onChange} keyboardType="number-pad" error={fieldState.error?.message} />} />
       </View>
       {mutation.error ? <Text accessibilityRole="alert" style={styles.error}>{getApiError(mutation.error, 'Không thể lưu nhịp Pomodoro.')}</Text> : null}
       {mutation.isSuccess && !form.formState.isDirty ? <Text accessibilityLiveRegion="polite" style={styles.success}>Đã lưu nhịp mặc định.</Text> : null}
@@ -213,7 +214,9 @@ const styles = StyleSheet.create({
   formSurface: { gap: spacing.x4 },
   field: { gap: spacing.x2 },
   twoColumns: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.x3 },
+  stackedColumns: { flexDirection: 'column' },
   column: { flex: 1 },
+  fullColumn: { flex: 0, width: '100%' },
   error: { ...typography.small, color: colors.danger },
   success: { ...typography.small, color: colors.mossDark },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.x3, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.x3 },

@@ -16,6 +16,7 @@
     "expo": "~57.0.12",
     "expo-asset": "~57.0.10",
     "expo-constants": "~57.0.10",
+    "expo-dev-client": "~57.0.11",
     "expo-font": "~57.0.1",
     "expo-linking": "~57.0.5",
     "expo-notifications": "~57.0.10",
@@ -55,8 +56,11 @@
     "lint": "eslint .",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
-    "expo:doctor": "expo-doctor",
-    "expo:config": "expo config --type public"
+    "check": "npm run typecheck && npm run lint && npm test && npx expo install --check",
+    "expo:doctor": "npx expo-doctor",
+    "expo:config": "expo config --type public",
+    "export:android": "expo export --platform android --output-dir dist",
+    "brand:assets": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/generate-brand-assets.ps1"
   },
   "private": true
 }
