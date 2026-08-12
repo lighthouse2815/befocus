@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from '@/screens/PlaceholderScreen'
+import { InsightsScreen } from '@/screens/InsightsScreen'
 
 export default function InsightsRoute() {
-  return <PlaceholderScreen title="Phân tích" description="Tóm tắt tập trung và thói quen sẽ dùng dữ liệu analytics từ backend." />
+  return <InsightsScreen />
 }

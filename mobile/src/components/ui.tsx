@@ -86,7 +86,7 @@ export function ProgressBar({ value, target, label }: { value: number; target: n
   const ratio = target <= 0 ? 0 : Math.min(1, Math.max(0, value / target))
   const percentage = Math.round(ratio * 100)
   return (
-    <View accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max: 100, now: percentage }}>
+    <View accessible accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max: 100, now: percentage }}>
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${percentage}%` }]} />
       </View>
@@ -96,7 +96,7 @@ export function ProgressBar({ value, target, label }: { value: number; target: n
 
 export function InlineError({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <Surface accessibilityRole="alert" style={styles.errorSurface}>
+    <Surface accessible accessibilityRole="alert" style={styles.errorSurface}>
       <Text style={styles.errorTitle}>Có vấn đề khi tải dữ liệu</Text>
       <Text style={styles.errorBody}>{message}</Text>
       {onRetry ? <Button label="Thử lại" variant="secondary" onPress={onRetry} /> : null}
@@ -110,6 +110,18 @@ export function EmptyState({ title, description, action }: { title: string; desc
       <Text style={styles.emptyTitle}>{title}</Text>
       {description ? <Text style={styles.emptyDescription}>{description}</Text> : null}
       {action}
+    </View>
+  )
+}
+
+export function LoadingBlock({ label = 'Đang tải dữ liệu', rows = 3 }: { label?: string; rows?: number }) {
+  return (
+    <View accessibilityRole="progressbar" accessibilityLabel={label} style={styles.loadingBlock}>
+      <ActivityIndicator color={colors.moss} />
+      <Text style={styles.loadingLabel}>{label}</Text>
+      <View style={styles.loadingRows} importantForAccessibility="no-hide-descendants">
+        {Array.from({ length: rows }, (_, index) => <View key={index} style={[styles.loadingRow, index === rows - 1 ? styles.loadingRowShort : null]} />)}
+      </View>
     </View>
   )
 }
@@ -136,4 +148,9 @@ const styles = StyleSheet.create({
   emptyState: { paddingVertical: spacing.x8, alignItems: 'center', gap: spacing.x3 },
   emptyTitle: { ...typography.subheading, color: colors.ink, textAlign: 'center' },
   emptyDescription: { ...typography.body, color: colors.inkSoft, textAlign: 'center', maxWidth: 300 },
+  loadingBlock: { gap: spacing.x3, paddingVertical: spacing.x4, alignItems: 'flex-start' },
+  loadingLabel: { ...typography.small, color: colors.inkSoft },
+  loadingRows: { width: '100%', gap: spacing.x2 },
+  loadingRow: { height: 12, borderRadius: radii.control, backgroundColor: colors.line },
+  loadingRowShort: { width: '62%' },
 })

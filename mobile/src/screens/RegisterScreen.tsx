@@ -11,13 +11,13 @@ import { getApiError, getFieldErrors } from '@/services/apiClient'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/store/authStore'
 
-const schema = z.object({
+export const registerSchema = z.object({
   name: z.string().trim().min(1, 'Nhập tên của bạn.').max(120, 'Tên tối đa 120 ký tự.'),
   email: z.email('Nhập địa chỉ email hợp lệ.'),
   password: z.string().min(8, 'Mật khẩu cần ít nhất 8 ký tự.').max(128, 'Mật khẩu tối đa 128 ký tự.'),
 })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<typeof registerSchema>
 
 export function RegisterScreen() {
   const emailRef = useRef<TextInput>(null)
@@ -25,7 +25,7 @@ export function RegisterScreen() {
   const [submitError, setSubmitError] = useState('')
   const setSession = useAuthStore((state) => state.setSession)
   const { control, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(registerSchema),
     defaultValues: { name: '', email: '', password: '' },
   })
 

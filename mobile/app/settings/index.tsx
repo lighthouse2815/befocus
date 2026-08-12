@@ -1,5 +1,5 @@
-import { PlaceholderScreen } from '@/screens/PlaceholderScreen'
+import { SettingsScreen } from '@/screens/SettingsScreen'
 
 export default function SettingsRoute() {
-  return <PlaceholderScreen title="Cài đặt" description="Hồ sơ, Pomodoro và thông báo sẽ được cấu hình tại đây." />
+  return <SettingsScreen />
 }

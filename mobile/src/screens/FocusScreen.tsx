@@ -6,7 +6,8 @@ import { useLocalSearchParams } from 'expo-router'
 import { Alert, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { AppHeader } from '@/components/AppHeader'
 import { ChoiceField, type ChoiceOption } from '@/components/ChoiceField'
-import { Button, InlineError, SectionHeader, Surface, TextField } from '@/components/ui'
+import { FocusTimerControls } from '@/components/FocusTimerControls'
+import { Button, InlineError, LoadingBlock, SectionHeader, Surface, TextField } from '@/components/ui'
 import { colors, iconSizes, spacing, typography } from '@/constants/theme'
 import { useTimerTicker } from '@/hooks/useTimerTicker'
 import { Screen } from '@/layouts/Screen'
@@ -138,14 +139,20 @@ export function FocusScreen() {
       <AppHeader />
       <View style={styles.timerIntro}><Text style={styles.eyebrow}>{session ? 'Giữ nhịp' : 'Một việc một lúc'}</Text><Text style={styles.title}>Tập trung</Text><Text style={styles.subtitle}>{session ? 'Timer được dựng lại từ timestamp server, kể cả sau khi khóa màn hình.' : 'Chọn ngữ cảnh vừa đủ rồi bắt đầu.'}</Text></View>
 
+      {!session && (settings.isPending || habits.isPending || projects.isPending) ? <LoadingBlock label="Đang chuẩn bị ngữ cảnh phiên" rows={2} /> : null}
+
       {session ? (
         <Surface style={styles.timerTray}>
-          <View style={styles.context}><Text style={styles.status}>{session.status === 'PAUSED' ? 'Đang tạm dừng' : remainingSeconds === 0 ? 'Đang đồng bộ hoàn thành' : 'Đang tập trung'}</Text><Text numberOfLines={2} style={styles.contextTitle}>{session.taskTitle || session.habitName || session.projectName || 'Phiên độc lập'}</Text><Text style={styles.contextMeta}>{session.plannedDurationMinutes} phút{session.projectName ? ` · ${session.projectName}` : ''}</Text></View>
-          <Text accessible accessibilityLabel={timerAccessibilityLabel(remainingSeconds)} accessibilityLiveRegion="polite" style={styles.timer}>{formatTimer(remainingSeconds)}</Text>
-          <View style={styles.primaryControls}>
-            {session.status === 'PAUSED' ? <Button label="Tiếp tục" loading={resume.isPending} onPress={() => resume.mutate(session.id)} /> : <Button label="Tạm dừng" variant="secondary" loading={pause.isPending} disabled={remainingSeconds === 0} onPress={() => pause.mutate(session.id)} />}
-            <Button label="Hoàn thành" loading={complete.isPending} onPress={() => complete.mutate(session.id)} />
-          </View>
+          <FocusTimerControls
+            session={session}
+            remainingSeconds={remainingSeconds}
+            pausePending={pause.isPending}
+            resumePending={resume.isPending}
+            completePending={complete.isPending}
+            onPause={() => pause.mutate(session.id)}
+            onResume={() => resume.mutate(session.id)}
+            onComplete={() => complete.mutate(session.id)}
+          />
           <View style={styles.interruptions}>
             <Text style={styles.fieldLabel}>Ghi gián đoạn</Text>
             <View style={styles.chips}>{interruptionOptions.map((option) => <Button key={option.value} label={option.label} variant="quiet" disabled={interruption.isPending} onPress={() => interruption.mutate({ id: session.id, kind: option.value })} />)}</View>
@@ -189,12 +196,7 @@ const styles = StyleSheet.create({
   title: { ...typography.title, color: colors.ink },
   subtitle: { ...typography.body, color: colors.inkSoft, marginTop: spacing.x1 },
   timerTray: { gap: spacing.x6, paddingVertical: spacing.x6 },
-  context: { alignItems: 'center', gap: spacing.x1 },
-  status: { ...typography.eyebrow, color: colors.mossDark },
-  contextTitle: { ...typography.heading, color: colors.ink, textAlign: 'center' },
-  contextMeta: { ...typography.small, color: colors.inkSoft, textAlign: 'center' },
   timer: { ...typography.timer, color: colors.ink, textAlign: 'center', fontVariant: ['tabular-nums'] },
-  primaryControls: { gap: spacing.x3 },
   interruptions: { gap: spacing.x2, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.x4 },
   fieldLabel: { ...typography.smallStrong, color: colors.ink },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.x1 },

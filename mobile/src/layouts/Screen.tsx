@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, View, type ScrollViewProps, type ViewProps } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { colors, spacing } from '@/constants/theme'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 interface ScreenProps extends ScrollViewProps {
   children: React.ReactNode
@@ -11,6 +12,7 @@ interface ScreenProps extends ScrollViewProps {
 export function Screen({ children, scroll = true, contentContainerStyle, ...props }: ScreenProps) {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <OfflineBanner />
       {scroll ? (
         <ScrollView
           keyboardShouldPersistTaps="handled"

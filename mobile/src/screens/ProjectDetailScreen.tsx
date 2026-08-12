@@ -6,7 +6,7 @@ import { Alert, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-
 import { ProjectEditor } from '@/components/ProjectEditor'
 import { RouteHeader } from '@/components/RouteHeader'
 import { TaskEditor } from '@/components/TaskEditor'
-import { Button, EmptyState, InlineError, SectionHeader, Surface } from '@/components/ui'
+import { Button, EmptyState, InlineError, LoadingBlock, SectionHeader, Surface } from '@/components/ui'
 import { colors, iconSizes, radii, spacing, touchTarget, typography } from '@/constants/theme'
 import { Screen } from '@/layouts/Screen'
 import { getApiError } from '@/services/apiClient'
@@ -45,7 +45,7 @@ export function ProjectDetailScreen({ id }: { id: string }) {
   const project = query.data
   const maxWeek = useMemo(() => Math.max(1, ...(project?.weeklyActivity ?? []).map((point) => point.minutes)), [project?.weeklyActivity])
   if (query.error) return <Screen><RouteHeader title="Chi tiết dự án" /><InlineError message={getApiError(query.error)} onRetry={() => void query.refetch()} /></Screen>
-  if (!project) return <Screen><RouteHeader title="Chi tiết dự án" /><Text style={styles.loading}>Đang tải dự án…</Text></Screen>
+  if (!project) return <Screen><RouteHeader title="Chi tiết dự án" /><LoadingBlock label="Đang tải dự án" rows={5} /></Screen>
 
   return (
     <Screen refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={colors.moss} />}>
@@ -97,7 +97,6 @@ function Metric({ value, label }: { value: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  loading: { ...typography.body, color: colors.inkSoft },
   iconButton: { width: touchTarget, height: touchTarget, alignItems: 'center', justifyContent: 'center', borderRadius: radii.control, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperRaised },
   intro: { gap: spacing.x2 },
   eyebrow: { ...typography.eyebrow, color: colors.mossDark },

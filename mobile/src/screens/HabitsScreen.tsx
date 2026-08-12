@@ -4,7 +4,7 @@ import { router } from 'expo-router'
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { AppHeader } from '@/components/AppHeader'
 import { HabitItem } from '@/components/HabitItem'
-import { Button, EmptyState, InlineError } from '@/components/ui'
+import { Button, EmptyState, InlineError, LoadingBlock } from '@/components/ui'
 import { colors, iconSizes, radii, spacing, touchTarget, typography } from '@/constants/theme'
 import { useHabitProgress } from '@/hooks/useHabitProgress'
 import { useTodayKey } from '@/hooks/useTodayKey'
@@ -37,7 +37,7 @@ export function HabitsScreen() {
         </Pressable>
       </View>
 
-      {query.error ? <InlineError message={getApiError(query.error)} onRetry={() => void query.refetch()} /> : active.length ? (
+      {query.isPending ? <LoadingBlock label="Đang tải thói quen" rows={4} /> : query.error ? <InlineError message={getApiError(query.error)} onRetry={() => void query.refetch()} /> : active.length ? (
         <View style={styles.list}>
           {active.map((habit) => (
             <HabitItem

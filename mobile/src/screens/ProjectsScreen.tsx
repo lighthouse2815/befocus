@@ -5,7 +5,7 @@ import { router } from 'expo-router'
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { AppHeader } from '@/components/AppHeader'
 import { ProjectEditor } from '@/components/ProjectEditor'
-import { Button, EmptyState, InlineError, SectionHeader, Surface } from '@/components/ui'
+import { Button, EmptyState, InlineError, LoadingBlock, SectionHeader, Surface } from '@/components/ui'
 import { colors, iconSizes, radii, spacing, touchTarget, typography } from '@/constants/theme'
 import { Screen } from '@/layouts/Screen'
 import { getApiError } from '@/services/apiClient'
@@ -45,7 +45,7 @@ export function ProjectsScreen() {
 
       {creating ? <Surface style={styles.editor}><SectionHeader eyebrow="Dự án mới" title="Bạn muốn tiến triển điều gì?" /><ProjectEditor submitLabel="Tạo dự án" loading={create.isPending} onCancel={() => setCreating(false)} onSubmit={(payload) => create.mutate(payload)} />{create.error ? <Text accessibilityRole="alert" style={styles.error}>{getApiError(create.error, 'Không thể tạo dự án.')}</Text> : null}</Surface> : null}
 
-      {query.error ? <InlineError message={getApiError(query.error)} onRetry={() => void query.refetch()} /> : active.length ? (
+      {query.isPending ? <LoadingBlock label="Đang tải dự án" rows={4} /> : query.error ? <InlineError message={getApiError(query.error)} onRetry={() => void query.refetch()} /> : active.length ? (
         <View style={styles.section}>
           <SectionHeader eyebrow="Đang mở" title="Nhịp làm việc" action={<Text style={styles.count}>{active.length}</Text>} />
           <Surface style={styles.list}>

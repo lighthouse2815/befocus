@@ -5,7 +5,7 @@ import { Alert, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-
 import { HabitHeatmap } from '@/components/HabitHeatmap'
 import { HabitItem } from '@/components/HabitItem'
 import { RouteHeader } from '@/components/RouteHeader'
-import { Button, EmptyState, InlineError, SectionHeader, Surface } from '@/components/ui'
+import { Button, EmptyState, InlineError, LoadingBlock, SectionHeader, Surface } from '@/components/ui'
 import { colors, iconSizes, radii, spacing, touchTarget, typography } from '@/constants/theme'
 import { useHabitProgress } from '@/hooks/useHabitProgress'
 import { useTodayKey } from '@/hooks/useTodayKey'
@@ -60,7 +60,7 @@ export function HabitDetailScreen({ id }: { id: string }) {
   if (query.error) {
     return <Screen><RouteHeader title="Chi tiết thói quen" /><InlineError message={getApiError(query.error)} onRetry={() => void query.refetch()} /></Screen>
   }
-  if (!query.data) return <Screen><RouteHeader title="Chi tiết thói quen" /><Text style={styles.loading}>Đang tải thói quen…</Text></Screen>
+  if (!query.data) return <Screen><RouteHeader title="Chi tiết thói quen" /><LoadingBlock label="Đang tải thói quen" rows={5} /></Screen>
   const habit = query.data
   const heatmap = fillHeatmap(habit.entries, range.from, range.to)
 
@@ -157,7 +157,6 @@ function InfoRow({ icon, label, value }: { icon: React.ComponentProps<typeof Ion
 }
 
 const styles = StyleSheet.create({
-  loading: { ...typography.body, color: colors.inkSoft },
   iconButton: { width: touchTarget, height: touchTarget, alignItems: 'center', justifyContent: 'center', borderRadius: radii.control, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paperRaised },
   intro: { gap: spacing.x2 },
   eyebrow: { ...typography.eyebrow, color: colors.mossDark },

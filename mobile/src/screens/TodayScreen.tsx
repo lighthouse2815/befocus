@@ -4,7 +4,7 @@ import { router } from 'expo-router'
 import { RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { AppHeader } from '@/components/AppHeader'
 import { HabitItem } from '@/components/HabitItem'
-import { Button, EmptyState, InlineError, SectionHeader, Surface } from '@/components/ui'
+import { Button, EmptyState, InlineError, LoadingBlock, SectionHeader, Surface } from '@/components/ui'
 import { colors, iconSizes, spacing, typography } from '@/constants/theme'
 import { useHabitProgress } from '@/hooks/useHabitProgress'
 import { useTodayKey } from '@/hooks/useTodayKey'
@@ -56,7 +56,7 @@ export function TodayScreen() {
         <Text style={styles.subtitle}>Chọn một việc rõ ràng, rồi dành cho nó một khoảng tập trung.</Text>
       </View>
 
-      {dashboard.error ? <InlineError message={getApiError(dashboard.error)} onRetry={() => void dashboard.refetch()} /> : (
+      {dashboard.isPending ? <LoadingBlock label="Đang tải tổng quan hôm nay" rows={2} /> : dashboard.error ? <InlineError message={getApiError(dashboard.error)} onRetry={() => void dashboard.refetch()} /> : (
         <Surface style={styles.focusTray}>
           <View style={styles.focusCopy}>
             <Text style={styles.trayEyebrow}>{dashboard.data?.activeSession ? 'Phiên đang chạy' : 'Bắt đầu nhanh'}</Text>
@@ -72,7 +72,7 @@ export function TodayScreen() {
 
       <View style={styles.section}>
         <SectionHeader eyebrow="Ưu tiên" title="Thói quen hôm nay" action={<Text style={styles.sectionCount}>{scheduledHabits.filter((habit) => habit.completedToday).length}/{scheduledHabits.length}</Text>} />
-        {habits.error ? <InlineError message={getApiError(habits.error)} onRetry={() => void habits.refetch()} /> : scheduledHabits.length ? (
+        {habits.isPending ? <LoadingBlock label="Đang tải thói quen hôm nay" rows={3} /> : habits.error ? <InlineError message={getApiError(habits.error)} onRetry={() => void habits.refetch()} /> : scheduledHabits.length ? (
           <View style={styles.list}>
             {scheduledHabits.map((habit) => (
               <HabitItem
@@ -94,7 +94,7 @@ export function TodayScreen() {
 
       <View style={styles.section}>
         <SectionHeader eyebrow="Tiếp theo" title="Công việc cần làm" />
-        {tasks.error ? <InlineError message={getApiError(tasks.error)} onRetry={() => void tasks.refetch()} /> : pendingTasks.length ? (
+        {tasks.isPending ? <LoadingBlock label="Đang tải công việc" rows={3} /> : tasks.error ? <InlineError message={getApiError(tasks.error)} onRetry={() => void tasks.refetch()} /> : pendingTasks.length ? (
           <Surface style={styles.taskList}>
             {pendingTasks.map((task, index) => (
               <View key={task.id} style={[styles.taskRow, index > 0 ? styles.rowRule : null]}>

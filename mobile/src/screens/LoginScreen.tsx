@@ -11,19 +11,19 @@ import { getApiError, getFieldErrors } from '@/services/apiClient'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/store/authStore'
 
-const schema = z.object({
+export const loginSchema = z.object({
   email: z.email('Nhập địa chỉ email hợp lệ.'),
   password: z.string().min(1, 'Nhập mật khẩu.'),
 })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<typeof loginSchema>
 
 export function LoginScreen() {
   const passwordRef = useRef<TextInput>(null)
   const [submitError, setSubmitError] = useState('')
   const setSession = useAuthStore((state) => state.setSession)
   const { control, handleSubmit, setError, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   })
 
