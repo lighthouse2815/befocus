@@ -11,7 +11,7 @@ interface ScreenProps extends ScrollViewProps {
 
 export function Screen({ children, scroll = true, contentContainerStyle, ...props }: ScreenProps) {
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
       <OfflineBanner />
       {scroll ? (
         <ScrollView

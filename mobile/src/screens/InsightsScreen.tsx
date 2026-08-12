@@ -4,12 +4,12 @@ import { RefreshControl, StyleSheet, Text, View } from 'react-native'
 import { AppHeader } from '@/components/AppHeader'
 import { Button, EmptyState, InlineError, LoadingBlock, ProgressBar, SectionHeader, Surface } from '@/components/ui'
 import { colors, spacing, typography } from '@/constants/theme'
+import { useTodayKey } from '@/hooks/useTodayKey'
 import { Screen } from '@/layouts/Screen'
 import { analyticsKeys, analyticsService } from '@/services/analyticsService'
 import { getApiError } from '@/services/apiClient'
-import { useAuthStore } from '@/store/authStore'
 import type { AnalyticsBreakdown } from '@/types'
-import { dateRangeInTimeZone, formatShortDate } from '@/utils/date'
+import { dateRangeEndingOn, formatShortDate, previousDateRange, weekToDateRange } from '@/utils/date'
 
 function minutesLabel(minutes: number) {
   if (minutes < 60) return `${minutes} phút`
@@ -40,16 +40,27 @@ function Breakdown({ title, items }: { title: string; items: AnalyticsBreakdown[
 
 export function InsightsScreen() {
   const [days, setDays] = useState<7 | 30>(30)
-  const timezone = useAuthStore((state) => state.user?.timezone ?? 'Asia/Ho_Chi_Minh')
-  const range = useMemo(() => dateRangeInTimeZone(days, timezone), [days, timezone])
+  const today = useTodayKey()
+  const range = useMemo(() => dateRangeEndingOn(today, days), [days, today])
+  const priorRange = useMemo(() => previousDateRange(range, days), [days, range])
+  const weekRange = useMemo(() => weekToDateRange(today), [today])
   const focus = useQuery({ queryKey: analyticsKeys.focus(range), queryFn: () => analyticsService.focus(range) })
+  const priorFocus = useQuery({ queryKey: analyticsKeys.focus(priorRange), queryFn: () => analyticsService.focus(priorRange) })
+  const weekFocus = useQuery({ queryKey: analyticsKeys.focus(weekRange), queryFn: () => analyticsService.focus(weekRange) })
+  const dashboard = useQuery({ queryKey: analyticsKeys.dashboard(today), queryFn: () => analyticsService.dashboard(today) })
   const habits = useQuery({ queryKey: analyticsKeys.habits(range), queryFn: () => analyticsService.habits(range) })
-  const loading = focus.isPending || habits.isPending
-  const refreshing = focus.isRefetching || habits.isRefetching
+  const loading = focus.isPending || habits.isPending || priorFocus.isPending || weekFocus.isPending || dashboard.isPending
+  const refreshing = focus.isRefetching || habits.isRefetching || priorFocus.isRefetching || weekFocus.isRefetching || dashboard.isRefetching
   const maxDaily = Math.max(1, ...(habits.data?.heatmap ?? []).slice(-7).map((cell) => cell.value))
+  const interruptionDelta = focus.data && priorFocus.data ? focus.data.interruptions - priorFocus.data.interruptions : null
+  const interruptionTrend = interruptionDelta === null
+    ? 'Chưa có dữ liệu so sánh'
+    : interruptionDelta === 0
+      ? `Không đổi so với ${days} ngày trước`
+      : `${interruptionDelta > 0 ? 'Tăng' : 'Giảm'} ${Math.abs(interruptionDelta)} so với ${days} ngày trước`
 
   return (
-    <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void Promise.all([focus.refetch(), habits.refetch()])} tintColor={colors.moss} />}>
+    <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void Promise.all([focus.refetch(), priorFocus.refetch(), weekFocus.refetch(), dashboard.refetch(), habits.refetch()])} tintColor={colors.moss} />}>
       <AppHeader />
       <View style={styles.intro}>
         <Text style={styles.eyebrow}>Nhìn lại có chủ đích</Text>
@@ -65,18 +76,23 @@ export function InsightsScreen() {
       {loading ? <LoadingBlock label="Đang tính nhịp của bạn" rows={6} /> : null}
       {focus.error ? <InlineError message={getApiError(focus.error, 'Không thể tải phân tích tập trung.')} onRetry={() => void focus.refetch()} /> : null}
       {habits.error ? <InlineError message={getApiError(habits.error, 'Không thể tải phân tích thói quen.')} onRetry={() => void habits.refetch()} /> : null}
+      {dashboard.error || weekFocus.error || priorFocus.error ? <InlineError message="Một phần số liệu so sánh chưa tải được." onRetry={() => void Promise.all([dashboard.refetch(), weekFocus.refetch(), priorFocus.refetch()])} /> : null}
 
-      {focus.data && habits.data ? (
+      {focus.data && habits.data && dashboard.data && weekFocus.data ? (
         <>
           <View style={styles.stats} accessibilityLabel="Tổng quan phân tích">
             <Surface style={styles.primaryStat}><Text style={styles.statLabel}>Tập trung</Text><Text style={styles.primaryValue}>{minutesLabel(focus.data.totalMinutes)}</Text><Text style={styles.statDetail}>{focus.data.completedSessions} phiên hoàn thành</Text></Surface>
+            <View style={styles.statPair}>
+              <View style={styles.flatStat}><Text style={styles.statLabel}>Hôm nay</Text><Text style={styles.statValue}>{minutesLabel(dashboard.data.focusMinutes)}</Text><Text style={styles.statDetail}>Theo múi giờ hồ sơ</Text></View>
+              <View style={styles.flatStat}><Text style={styles.statLabel}>Tuần này</Text><Text style={styles.statValue}>{minutesLabel(weekFocus.data.totalMinutes)}</Text><Text style={styles.statDetail}>Từ thứ Hai đến nay</Text></View>
+            </View>
             <View style={styles.statPair}>
               <View style={styles.flatStat}><Text style={styles.statLabel}>Trung bình</Text><Text style={styles.statValue}>{focus.data.averageSessionMinutes}p</Text><Text style={styles.statDetail}>{focus.data.completionRate.toFixed(0)}% hoàn thành</Text></View>
               <View style={styles.flatStat}><Text style={styles.statLabel}>Thói quen</Text><Text style={styles.statValue}>{habits.data.completionRate.toFixed(0)}%</Text><Text style={styles.statDetail}>{habits.data.currentStreak} ngày streak</Text></View>
             </View>
             <View style={styles.statPair}>
               <View style={styles.flatStat}><Text style={styles.statLabel}>Nhất quán</Text><Text style={styles.statValue}>{habits.data.consistency.toFixed(0)}%</Text><Text style={styles.statDetail}>Theo lịch đã đặt</Text></View>
-              <View style={styles.flatStat}><Text style={styles.statLabel}>Gián đoạn</Text><Text style={styles.statValue}>{focus.data.interruptions}</Text><Text style={styles.statDetail}>Trong các phiên</Text></View>
+              <View style={styles.flatStat}><Text style={styles.statLabel}>Gián đoạn</Text><Text style={styles.statValue}>{focus.data.interruptions}</Text><Text style={styles.statDetail}>{interruptionTrend}</Text></View>
             </View>
           </View>
 

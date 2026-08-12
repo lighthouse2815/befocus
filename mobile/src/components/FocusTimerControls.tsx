@@ -30,7 +30,7 @@ export function FocusTimerControls({
         <Text numberOfLines={2} style={styles.contextTitle}>{session.taskTitle || session.habitName || session.projectName || 'Phiên độc lập'}</Text>
         <Text style={styles.contextMeta}>{session.plannedDurationMinutes} phút{session.projectName ? ` · ${session.projectName}` : ''}</Text>
       </View>
-      <Text accessible accessibilityLabel={timerAccessibilityLabel(remainingSeconds)} accessibilityLiveRegion="polite" style={styles.timer}>{formatTimer(remainingSeconds)}</Text>
+      <Text accessible accessibilityLabel={timerAccessibilityLabel(remainingSeconds)} accessibilityLiveRegion="polite" maxFontSizeMultiplier={1.4} style={styles.timer}>{formatTimer(remainingSeconds)}</Text>
       <View style={styles.primaryControls}>
         {session.status === 'PAUSED'
           ? <Button label="Tiếp tục" loading={resumePending} onPress={onResume} />

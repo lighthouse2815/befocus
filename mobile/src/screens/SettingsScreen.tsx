@@ -16,12 +16,20 @@ import { notificationService, type LocalNotificationPermission } from '@/service
 import { settingsKeys, settingsService } from '@/services/settingsService'
 import { userService } from '@/services/userService'
 import { useAuthStore } from '@/store/authStore'
+import { useNotificationStore } from '@/store/notificationStore'
 import { useTimerStore } from '@/store/timerStore'
 import type { NotificationPreference, Settings, User } from '@/types'
 
 export const profileSchema = z.object({
   name: z.string().trim().min(2, 'Tên cần ít nhất 2 ký tự.').max(80, 'Tên tối đa 80 ký tự.'),
-  timezone: z.string().trim().min(1, 'Hãy chọn múi giờ.'),
+  timezone: z.string().trim().min(1, 'Hãy chọn múi giờ.').refine((value) => {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: value }).format()
+      return true
+    } catch {
+      return false
+    }
+  }, 'Dùng timezone IANA hợp lệ, ví dụ Asia/Ho_Chi_Minh.'),
 })
 
 export const pomodoroSchema = z.object({
@@ -39,21 +47,36 @@ const baseTimezones = [
 ]
 
 function ProfileForm({ user }: { user: User }) {
+  const queryClient = useQueryClient()
   const setUser = useAuthStore((state) => state.setUser)
+  const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const commonTimezones = Array.from(new Set([deviceTimezone, ...baseTimezones].filter(Boolean)))
+  const [customTimezone, setCustomTimezone] = React.useState(!commonTimezones.includes(user.timezone))
   const form = useForm<ProfileFields>({ resolver: zodResolver(profileSchema), defaultValues: { name: user.name, timezone: user.timezone } })
   const mutation = useMutation({
     mutationFn: userService.update,
     onSuccess: async (updated) => {
       await setUser(updated)
+      queryClient.setQueryData<Settings>(settingsKeys.settings, (current) => current ? { ...current, timezone: updated.timezone } : current)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['analytics'] }),
+        queryClient.invalidateQueries({ queryKey: ['habits'] }),
+      ])
       form.reset({ name: updated.name, timezone: updated.timezone })
     },
   })
-  const timezones = Array.from(new Set([user.timezone, ...baseTimezones])).map((value) => ({ value, label: value.replaceAll('_', ' ') }))
+  const timezones = [...commonTimezones.map((value) => ({ value, label: value.replaceAll('_', ' ') })), { value: '__custom__', label: 'Timezone IANA khác' }]
   return (
     <Surface style={styles.formSurface}>
       <SectionHeader eyebrow="Tài khoản" title="Hồ sơ" />
       <Controller control={form.control} name="name" render={({ field, fieldState }) => <TextField label="Tên hiển thị" value={field.value} onBlur={field.onBlur} onChangeText={field.onChange} autoCapitalize="words" error={fieldState.error?.message} />} />
-      <Controller control={form.control} name="timezone" render={({ field, fieldState }) => <View style={styles.field}><ChoiceField label="Múi giờ" value={field.value} options={timezones} placeholder="Chọn múi giờ" onChange={field.onChange} />{fieldState.error ? <Text accessibilityRole="alert" style={styles.error}>{fieldState.error.message}</Text> : null}</View>} />
+      <Controller control={form.control} name="timezone" render={({ field, fieldState }) => <View style={styles.field}>
+        <ChoiceField label="Múi giờ" value={customTimezone ? '__custom__' : field.value} options={timezones} placeholder="Chọn múi giờ" onChange={(value) => {
+          if (value === '__custom__') setCustomTimezone(true)
+          else { setCustomTimezone(false); field.onChange(value) }
+        }} />
+        {customTimezone ? <TextField label="Timezone IANA" value={field.value} onBlur={field.onBlur} onChangeText={field.onChange} autoCapitalize="none" autoCorrect={false} hint="Ví dụ: Europe/Paris" error={fieldState.error?.message} /> : fieldState.error ? <Text accessibilityRole="alert" style={styles.error}>{fieldState.error.message}</Text> : null}
+      </View>} />
       {mutation.error ? <Text accessibilityRole="alert" style={styles.error}>{getApiError(mutation.error, 'Không thể lưu hồ sơ.')}</Text> : null}
       {mutation.isSuccess && !form.formState.isDirty ? <Text accessibilityLiveRegion="polite" style={styles.success}>Đã lưu hồ sơ.</Text> : null}
       <Button label="Lưu hồ sơ" loading={mutation.isPending} disabled={!form.formState.isDirty} onPress={form.handleSubmit((values) => mutation.mutate(values))} />
@@ -120,13 +143,18 @@ function ToggleRow({ label, description, value, disabled, onChange }: { label: s
 
 function NotificationsForm({ settings, preferences }: { settings: Settings; preferences: NotificationPreference }) {
   const queryClient = useQueryClient()
+  const syncError = useNotificationStore((state) => state.syncError)
+  const setSyncError = useNotificationStore((state) => state.setSyncError)
   const [permission, setPermission] = React.useState<LocalNotificationPermission>('undetermined')
   const [permissionLoading, setPermissionLoading] = React.useState(true)
   React.useEffect(() => {
     let active = true
-    void notificationService.permission().then((status) => { if (active) setPermission(status) }).finally(() => { if (active) setPermissionLoading(false) })
+    void notificationService.permission()
+      .then((status) => { if (active) setPermission(status) })
+      .catch(() => { if (active) setSyncError('Không thể đọc quyền thông báo của thiết bị.') })
+      .finally(() => { if (active) setPermissionLoading(false) })
     return () => { active = false }
-  }, [])
+  }, [setSyncError])
   const mutation = useMutation({
     mutationFn: async (enabled: boolean) => {
       const [updatedSettings, updatedPreferences] = await Promise.all([
@@ -138,13 +166,20 @@ function NotificationsForm({ settings, preferences }: { settings: Settings; pref
     onSuccess: ({ updatedSettings, updatedPreferences }) => {
       queryClient.setQueryData(settingsKeys.settings, updatedSettings)
       queryClient.setQueryData(settingsKeys.notifications, updatedPreferences)
-      if (!updatedSettings.notificationsEnabled) void notificationService.cancelAll()
+      if (!updatedSettings.notificationsEnabled) void notificationService.cancelAll().catch(() => setSyncError('Không thể huỷ toàn bộ lịch thông báo cục bộ.'))
     },
   })
   const enabled = settings.notificationsEnabled && preferences.enabled
   const request = async () => {
     setPermissionLoading(true)
-    try { setPermission(await notificationService.requestPermission()) } finally { setPermissionLoading(false) }
+    try {
+      setPermission(await notificationService.requestPermission())
+      setSyncError(null)
+    } catch {
+      setSyncError('Không thể yêu cầu quyền thông báo. Hãy kiểm tra cài đặt hệ thống.')
+    } finally {
+      setPermissionLoading(false)
+    }
   }
   const permissionText = permission === 'granted' ? 'Đã được hệ điều hành cho phép' : permission === 'denied' ? 'Đã bị chặn trong cài đặt thiết bị' : permission === 'unsupported' ? 'Không hỗ trợ trên nền tảng web' : 'Chưa hỏi quyền trên thiết bị này'
   return (
@@ -155,9 +190,10 @@ function NotificationsForm({ settings, preferences }: { settings: Settings; pref
         <Text style={styles.permissionLabel}>Quyền trên thiết bị</Text>
         <Text style={styles.permissionValue}>{permissionLoading ? 'Đang kiểm tra…' : permissionText}</Text>
         {permission === 'undetermined' ? <Button label="Cho phép trên thiết bị" variant="secondary" loading={permissionLoading} onPress={() => void request()} /> : null}
-        {permission === 'denied' ? <Button label="Mở cài đặt hệ thống" variant="secondary" onPress={() => void Linking.openSettings()} /> : null}
+        {permission === 'denied' ? <Button label="Mở cài đặt hệ thống" variant="secondary" onPress={() => void Linking.openSettings().catch(() => setSyncError('Không thể mở cài đặt hệ thống trên thiết bị này.'))} /> : null}
       </View>
       <Text style={styles.note}>FocusFlow chỉ xin quyền khi bạn bấm nút. Tắt công tắc sẽ huỷ các lịch cục bộ do app đã tạo.</Text>
+      {syncError ? <Text accessibilityRole="alert" style={styles.error}>{syncError}</Text> : null}
       {mutation.error ? <Text accessibilityRole="alert" style={styles.error}>{getApiError(mutation.error, 'Không thể cập nhật thông báo.')}</Text> : null}
     </Surface>
   )
@@ -171,7 +207,11 @@ function AccountActions() {
       if (auth.refreshToken) {
         try { await authService.logout(auth.refreshToken) } catch { /* Local logout must still succeed offline. */ }
       }
-      await Promise.all([notificationService.cancelAll(), useTimerStore.getState().clear(), auth.clearSession()])
+      await Promise.all([
+        notificationService.cancelAll().catch(() => useNotificationStore.getState().setSyncError('Không thể huỷ toàn bộ lịch thông báo cục bộ.')),
+        useTimerStore.getState().clear(),
+        auth.clearSession(),
+      ])
       queryClient.clear()
     },
     onSuccess: () => router.replace('/(auth)/login'),

@@ -17,4 +17,10 @@ describe('API error mapping', () => {
     expect(getApiError(apiError(400, { message: 'java.lang.IllegalStateException' }), 'Dữ liệu không hợp lệ.')).toBe('Dữ liệu không hợp lệ.')
     expect(getFieldErrors(apiError(400, { errors: { email: 'Email đã tồn tại.' } }))).toEqual({ email: 'Email đã tồn tại.' })
   })
+
+  it('maps backend state codes instead of exposing English domain messages', () => {
+    expect(getApiError(apiError(409, { code: 'CONFLICT', message: 'An active focus session already exists.' }))).toContain('xung đột')
+    expect(getApiError(apiError(422, { code: 'INVALID_STATE', message: 'Only a running focus session can be paused.' }))).toContain('trạng thái hiện tại')
+    expect(getApiError(apiError(400, { code: 'VALIDATION_ERROR', message: 'Please check highlighted fields.' }))).toContain('chưa hợp lệ')
+  })
 })

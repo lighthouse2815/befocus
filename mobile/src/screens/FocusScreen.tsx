@@ -1,6 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNetInfo } from '@react-native-community/netinfo'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocalSearchParams } from 'expo-router'
 import { Alert, RefreshControl, StyleSheet, Text, View } from 'react-native'
@@ -28,17 +27,17 @@ const interruptionOptions: Array<{ value: InterruptionKind; label: string }> = [
 export function FocusScreen() {
   const params = useLocalSearchParams<{ habitId?: string; projectId?: string; taskId?: string }>()
   const queryClient = useQueryClient()
-  const network = useNetInfo()
   const { session, phase, remainingSeconds } = useTimerTicker()
   const setSession = useTimerStore((state) => state.setSession)
   const completeFocus = useTimerStore((state) => state.completeFocus)
   const finishBreak = useTimerStore((state) => state.finishBreak)
+  const completionError = useTimerStore((state) => state.completionError)
+  const retryCompletion = useTimerStore((state) => state.retryCompletion)
   const [duration, setDuration] = useState('25')
   const [habitId, setHabitId] = useState('')
   const [projectId, setProjectId] = useState('')
   const [taskId, setTaskId] = useState('')
   const [formError, setFormError] = useState('')
-  const automaticCompletion = useRef<string | null>(null)
 
   const activeQuery = useQuery({ queryKey: focusKeys.active, queryFn: focusService.active })
   const settings = useQuery({ queryKey: settingsKeys.settings, queryFn: settingsService.get })
@@ -86,10 +85,7 @@ export function FocusScreen() {
       await completeFocus(completed.id, config.defaultBreakMinutes, config.longBreakMinutes, config.sessionsBeforeLongBreak)
       await invalidateAfterSession()
     },
-    onError: (error) => {
-      automaticCompletion.current = null
-      setFormError(getApiError(error, 'Chưa thể xác nhận phiên đã hoàn thành. Timer vẫn được giữ lại.'))
-    },
+    onError: (error) => setFormError(getApiError(error, 'Chưa thể xác nhận phiên đã hoàn thành. Timer vẫn được giữ lại.')),
   })
   const cancel = useMutation({
     mutationFn: (id: string) => focusService.cancel(id),
@@ -101,17 +97,6 @@ export function FocusScreen() {
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: focusKeys.active }) },
     onError: (error) => setFormError(getApiError(error, 'Không thể ghi nhận gián đoạn.')),
   })
-
-  useEffect(() => {
-    const online = Boolean(network.isConnected && network.isInternetReachable !== false)
-    if (!online || phase !== 'FOCUS' || !session || session.status !== 'RUNNING' || remainingSeconds > 0 || complete.isPending) return
-    if (automaticCompletion.current === session.id) return
-    automaticCompletion.current = session.id
-    complete.mutate(session.id)
-  }, [complete, network.isConnected, network.isInternetReachable, phase, remainingSeconds, session])
-  useEffect(() => {
-    if ((phase === 'SHORT_BREAK' || phase === 'LONG_BREAK') && remainingSeconds === 0) void finishBreak()
-  }, [finishBreak, phase, remainingSeconds])
 
   const durationHabits = useMemo(() => (habits.data ?? []).filter((habit) => habit.type === 'DURATION' && habit.scheduledToday && !habit.archivedAt), [habits.data])
   const activeProjects = useMemo(() => (projects.data ?? []).filter((project) => !project.archived), [projects.data])
@@ -127,7 +112,7 @@ export function FocusScreen() {
         <AppHeader />
         <View style={styles.timerIntro}><Text style={styles.eyebrow}>Phiên hoàn thành</Text><Text style={styles.title}>{phase === 'LONG_BREAK' ? 'Nghỉ dài' : 'Nghỉ ngắn'}</Text><Text style={styles.subtitle}>Đứng dậy, thả lỏng mắt và quay lại khi sẵn sàng.</Text></View>
         <Surface style={styles.timerTray}>
-          <Text accessible accessibilityLabel={timerAccessibilityLabel(remainingSeconds)} style={styles.timer}>{formatTimer(remainingSeconds)}</Text>
+          <Text accessible accessibilityLabel={timerAccessibilityLabel(remainingSeconds)} maxFontSizeMultiplier={1.4} style={styles.timer}>{formatTimer(remainingSeconds)}</Text>
           <Button label="Bỏ qua giờ nghỉ" variant="secondary" onPress={() => void finishBreak()} />
         </Surface>
       </Screen>
@@ -178,6 +163,7 @@ export function FocusScreen() {
       )}
 
       {activeQuery.error ? <InlineError message={getApiError(activeQuery.error)} onRetry={() => void activeQuery.refetch()} /> : null}
+      {session && completionError ? <InlineError title="Chưa thể hoàn thành phiên" message={completionError} onRetry={retryCompletion} /> : null}
       {recent.data?.length ? (
         <View style={styles.section}>
           <SectionHeader eyebrow="Gần đây" title="Các phiên trước" />

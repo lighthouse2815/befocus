@@ -55,10 +55,14 @@ export function getApiError(error: unknown, fallback = 'Không thể hoàn tất
   if (error instanceof ApiConfigurationError) return error.message
   if (!axios.isAxiosError<ApiErrorBody>(error)) return fallback
   if (!error.response) return 'Không thể kết nối máy chủ. Kiểm tra mạng và địa chỉ API rồi thử lại.'
-  if (error.response.status === 401) return 'Thông tin đăng nhập không hợp lệ hoặc phiên đã hết hạn. Hãy đăng nhập lại.'
-  if (error.response.status === 403) return 'Bạn không có quyền thực hiện thao tác này.'
-  if (error.response.status === 404) return 'Không tìm thấy dữ liệu được yêu cầu. Hãy tải lại màn hình.'
+  const code = error.response.data?.code
+  if (error.response.status === 401 || code === 'UNAUTHORIZED') return 'Thông tin đăng nhập không hợp lệ hoặc phiên đã hết hạn. Hãy đăng nhập lại.'
+  if (error.response.status === 403 || code === 'FORBIDDEN') return 'Bạn không có quyền thực hiện thao tác này.'
+  if (error.response.status === 404 || code === 'NOT_FOUND') return 'Không tìm thấy dữ liệu được yêu cầu. Hãy tải lại màn hình.'
   if (error.response.status >= 500) return 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'
+  if (code === 'CONFLICT') return 'Dữ liệu đang xung đột với trạng thái hiện tại. Hãy tải lại rồi thử lại.'
+  if (code === 'INVALID_STATE') return 'Thao tác không còn phù hợp với trạng thái hiện tại. Hãy tải lại dữ liệu.'
+  if (code === 'VALIDATION_ERROR') return 'Dữ liệu chưa hợp lệ. Kiểm tra các trường rồi thử lại.'
   const message = error.response.data?.message
   if (!message || /(?:exception|stack trace|\bat\s+[\w.$]+\(|java\.)/i.test(message)) return fallback
   return message

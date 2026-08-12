@@ -4,10 +4,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { useAppBootstrap } from '@/hooks/useAppBootstrap'
 import { FocusSessionSync } from './FocusSessionSync'
 import { NotificationCoordinator } from './NotificationCoordinator'
+import { DayBoundarySync } from './DayBoundarySync'
 
 function Bootstrap({ children }: { children: React.ReactNode }) {
   useAppBootstrap()
-  return <><FocusSessionSync /><NotificationCoordinator />{children}</>
+  return <><DayBoundarySync /><FocusSessionSync /><NotificationCoordinator />{children}</>
 }
 
 export function AppProviders({ children }: { children: React.ReactNode }) {

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Controller, useForm } from 'react-hook-form'
 import { router } from 'expo-router'
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { z } from 'zod'
 import { RouteHeader } from '@/components/RouteHeader'
 import { Button, InlineError, SectionHeader, TextField } from '@/components/ui'
@@ -76,6 +76,7 @@ function localTimeKey(value: Date) {
 export function HabitFormScreen({ id }: { id?: string }) {
   const editing = Boolean(id)
   const today = useTodayKey()
+  const compact = useWindowDimensions().width < 380
   const queryClient = useQueryClient()
   const [generalError, setGeneralError] = useState('')
   const detail = useQuery({ queryKey: habitKeys.detail(id ?? ''), queryFn: () => habitService.get(id!), enabled: editing })
@@ -165,12 +166,12 @@ export function HabitFormScreen({ id }: { id?: string }) {
           ]} />
         )} />
         {type !== 'BOOLEAN' ? (
-          <View style={styles.twoColumns}>
+          <View style={[styles.twoColumns, compact ? styles.stackedColumns : null]}>
             <Controller control={control} name="targetValue" render={({ field: { onBlur, onChange, value } }) => (
-              <TextField label="Mục tiêu" value={value} onBlur={onBlur} onChangeText={onChange} error={errors.targetValue?.message} keyboardType="decimal-pad" containerStyle={styles.flexInput} />
+              <TextField label="Mục tiêu" value={value} onBlur={onBlur} onChangeText={onChange} error={errors.targetValue?.message} keyboardType="decimal-pad" containerStyle={[styles.flexInput, compact ? styles.fullInput : null]} />
             )} />
             <Controller control={control} name="unit" render={({ field: { onBlur, onChange, value } }) => (
-              <TextField label="Đơn vị" value={value} onBlur={onBlur} onChangeText={onChange} error={errors.unit?.message} containerStyle={styles.flexInput} />
+              <TextField label="Đơn vị" value={value} onBlur={onBlur} onChangeText={onChange} error={errors.unit?.message} containerStyle={[styles.flexInput, compact ? styles.fullInput : null]} />
             )} />
           </View>
         ) : null}
@@ -253,7 +254,9 @@ const styles = StyleSheet.create({
   section: { gap: spacing.x4, paddingTop: spacing.x4, borderTopWidth: 1, borderTopColor: colors.line },
   textarea: { minHeight: 112 },
   twoColumns: { flexDirection: 'row', gap: spacing.x3 },
+  stackedColumns: { flexDirection: 'column' },
   flexInput: { flex: 1 },
+  fullInput: { flex: 0, width: '100%' },
   optionGroup: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.x2 },
   option: { minHeight: touchTarget, justifyContent: 'center', paddingHorizontal: spacing.x3, borderRadius: radii.control, borderWidth: 1, borderColor: colors.lineStrong, backgroundColor: colors.paperRaised },
   optionSelected: { borderColor: colors.moss, backgroundColor: colors.moss },

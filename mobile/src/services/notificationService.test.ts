@@ -20,14 +20,18 @@ describe('local notification scheduling', () => {
   let stored: string | null
 
   beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-08-10T12:00:00.000Z'))
     stored = null
     jest.clearAllMocks()
     jest.mocked(AsyncStorage.getItem).mockImplementation(async () => stored)
     jest.mocked(AsyncStorage.setItem).mockImplementation(async (_key, value) => { stored = value })
     jest.mocked(AsyncStorage.removeItem).mockImplementation(async () => { stored = null })
     jest.mocked(Notifications.getPermissionsAsync).mockResolvedValue({ granted: true, status: 'granted' } as never)
-    jest.mocked(Notifications.scheduleNotificationAsync).mockResolvedValueOnce('notification-1').mockResolvedValueOnce('notification-2')
+    let scheduled = 0
+    jest.mocked(Notifications.scheduleNotificationAsync).mockImplementation(async () => `notification-${++scheduled}`)
   })
+
+  afterEach(() => jest.useRealTimers())
 
   it('schedules by expectedEndAt and cancels the exact stale focus request on pause', async () => {
     await notificationService.syncFocus(session, true)
@@ -42,9 +46,21 @@ describe('local notification scheduling', () => {
   })
 
   it('maps backend ISO weekdays to Expo Sunday-first weekly triggers', async () => {
-    await notificationService.syncHabits([weekdayHabit], true)
+    await notificationService.syncHabits([weekdayHabit], true, Intl.DateTimeFormat().resolvedOptions().timeZone)
     expect(Notifications.scheduleNotificationAsync).toHaveBeenNthCalledWith(1, expect.objectContaining({ trigger: expect.objectContaining({ type: 'weekly', weekday: 2, hour: 20, minute: 15 }) }))
     expect(Notifications.scheduleNotificationAsync).toHaveBeenNthCalledWith(2, expect.objectContaining({ trigger: expect.objectContaining({ type: 'weekly', weekday: 1, hour: 20, minute: 15 }) }))
+  })
+
+  it('uses absolute timestamps when the profile timezone differs from the device', async () => {
+    const daily = { ...weekdayHabit, scheduleType: 'DAILY' as const, weekdays: null }
+    await notificationService.syncHabits([daily], true, 'Pacific/Auckland')
+
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      trigger: expect.objectContaining({
+        type: 'date',
+        date: new Date('2026-08-11T08:15:00.000Z'),
+      }),
+    }))
   })
 
   it('does not schedule when the operating-system permission is unavailable', async () => {

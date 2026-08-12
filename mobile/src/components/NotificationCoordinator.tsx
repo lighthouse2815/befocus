@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import * as Notifications from 'expo-notifications'
 import { useQuery } from '@tanstack/react-query'
 import { router } from 'expo-router'
@@ -7,6 +7,7 @@ import { habitKeys, habitService } from '@/services/habitService'
 import { notificationService } from '@/services/notificationService'
 import { settingsKeys, settingsService } from '@/services/settingsService'
 import { useAuthStore } from '@/store/authStore'
+import { useNotificationStore } from '@/store/notificationStore'
 import { useTimerStore } from '@/store/timerStore'
 
 const routes = {
@@ -22,6 +23,8 @@ function openResponse(response: Notifications.NotificationResponse | null) {
 
 export function NotificationCoordinator() {
   const authStatus = useAuthStore((state) => state.status)
+  const timezone = useAuthStore((state) => state.user?.timezone ?? 'UTC')
+  const setSyncError = useNotificationStore((state) => state.setSyncError)
   const authenticated = authStatus === 'authenticated'
   const session = useTimerStore((state) => state.session)
   const phase = useTimerStore((state) => state.phase)
@@ -45,40 +48,48 @@ export function NotificationCoordinator() {
   const focusSignature = `${enabled}:${session?.id ?? ''}:${session?.status ?? ''}:${session?.expectedEndAt ?? ''}`
   const breakSignature = `${enabled}:${phase}:${breakExpectedEndAt ?? ''}`
   const habitSignature = useMemo(
-    () => `${enabled}:${(habits.data ?? []).map((habit) => [habit.id, habit.reminderTime, habit.scheduleType, habit.scheduledToday, habit.weekdays?.join(',')].join(':')).join('|')}`,
-    [enabled, habits.data],
+    () => `${enabled}:${timezone}:${(habits.data ?? []).map((habit) => [habit.id, habit.reminderTime, habit.scheduleType, habit.scheduledToday, habit.weekdays?.join(','), habit.intervalDays, habit.scheduleStartDate].join(':')).join('|')}`,
+    [enabled, habits.data, timezone],
   )
+  const report = useCallback(async (operation: Promise<unknown>, message: string) => {
+    try {
+      await operation
+      setSyncError(null)
+    } catch {
+      setSyncError(message)
+    }
+  }, [setSyncError])
 
   useEffect(() => {
-    void notificationService.setup()
-  }, [])
+    void report(notificationService.setup(), 'Không thể cấu hình thông báo trên thiết bị này.')
+  }, [report])
 
   useEffect(() => {
     if (Platform.OS === 'web') return
-    void Notifications.getLastNotificationResponseAsync().then(openResponse)
+    void Notifications.getLastNotificationResponseAsync().then(openResponse).catch(() => setSyncError('Không thể đọc thao tác thông báo gần nhất.'))
     const subscription = Notifications.addNotificationResponseReceivedListener(openResponse)
     return () => subscription.remove()
-  }, [])
+  }, [setSyncError])
 
   useEffect(() => {
     if (!authenticated || settings.isPending || preferences.isPending) return
-    void notificationService.syncFocus(session, enabled)
+    void report(notificationService.syncFocus(session, enabled), 'Không thể cập nhật lịch kết thúc phiên tập trung.')
     // focusSignature deliberately prevents rescheduling on each timer tick.
-  }, [authenticated, enabled, focusSignature, preferences.isPending, session, settings.isPending])
+  }, [authenticated, enabled, focusSignature, preferences.isPending, report, session, settings.isPending])
 
   useEffect(() => {
     if (!authenticated || settings.isPending || preferences.isPending) return
-    void notificationService.syncBreak(phase === 'SHORT_BREAK' || phase === 'LONG_BREAK' ? breakExpectedEndAt : null, enabled)
-  }, [authenticated, breakExpectedEndAt, breakSignature, enabled, phase, preferences.isPending, settings.isPending])
+    void report(notificationService.syncBreak(phase === 'SHORT_BREAK' || phase === 'LONG_BREAK' ? breakExpectedEndAt : null, enabled), 'Không thể cập nhật lịch kết thúc giờ nghỉ.')
+  }, [authenticated, breakExpectedEndAt, breakSignature, enabled, phase, preferences.isPending, report, settings.isPending])
 
   useEffect(() => {
     if (!authenticated || settings.isPending || preferences.isPending || habits.isPending) return
-    void notificationService.syncHabits(habits.data ?? [], enabled)
-  }, [authenticated, enabled, habitSignature, habits.data, habits.isPending, preferences.isPending, settings.isPending])
+    void report(notificationService.syncHabits(habits.data ?? [], enabled, timezone), 'Không thể đồng bộ reminder thói quen. Mở Settings để kiểm tra quyền.')
+  }, [authenticated, enabled, habitSignature, habits.data, habits.isPending, preferences.isPending, report, settings.isPending, timezone])
 
   useEffect(() => {
-    if (authStatus === 'anonymous') void notificationService.cancelAll()
-  }, [authStatus])
+    if (authStatus === 'anonymous') void report(notificationService.cancelAll(), 'Không thể dọn lịch thông báo cục bộ sau khi đăng xuất.')
+  }, [authStatus, report])
 
   return null
 }

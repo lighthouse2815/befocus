@@ -28,6 +28,11 @@ describe('timestamp timer calculations', () => {
     expect(getRemainingSeconds(running, Date.parse('2026-08-13T00:26:00.000Z'))).toBe(0)
   })
 
+  it('recomputes from the absolute timestamp if the system clock changes', () => {
+    expect(getRemainingSeconds(running, Date.parse('2026-08-13T00:15:00.000Z'))).toBe(600)
+    expect(getRemainingSeconds(running, Date.parse('2026-08-13T00:05:00.000Z'))).toBe(1200)
+  })
+
   it('freezes remaining time at pausedAt instead of current time', () => {
     const paused = { ...running, status: 'PAUSED' as const, pausedAt: '2026-08-13T00:08:30.000Z' }
     expect(getRemainingSeconds(paused, Date.parse('2026-08-13T01:00:00.000Z'))).toBe(990)
@@ -40,6 +45,12 @@ describe('timestamp timer calculations', () => {
   it('formats visual and screen-reader timer values', () => {
     expect(formatTimer(1472)).toBe('24:32')
     expect(timerAccessibilityLabel(1472)).toBe('Còn 24 phút 32 giây')
+  })
+
+  it('fails safe for corrupt persisted timestamps and non-finite display input', () => {
+    expect(getBreakRemainingSeconds('not-a-date')).toBe(0)
+    expect(formatTimer(Number.NaN)).toBe('00:00')
+    expect(timerAccessibilityLabel(Number.NaN)).toBe('Còn 0 phút 0 giây')
   })
 })
 
@@ -56,6 +67,12 @@ describe('timer persistence', () => {
     await useTimerStore.getState().setSession(running)
     expect(useTimerStore.getState()).toMatchObject({ session: running, phase: 'FOCUS' })
     expect(AsyncStorage.setItem).toHaveBeenCalled()
+  })
+
+  it('discards corrupt cached session and break timestamps during hydration', async () => {
+    jest.mocked(AsyncStorage.getItem).mockResolvedValueOnce(JSON.stringify({ session: 'corrupt', phase: 'FOCUS', breakExpectedEndAt: 'bad-date' }))
+    await useTimerStore.getState().hydrate()
+    expect(useTimerStore.getState()).toMatchObject({ session: null, phase: 'READY', breakExpectedEndAt: null, hydrated: true })
   })
 
   it('does not start duplicate breaks for a retried complete response', async () => {

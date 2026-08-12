@@ -44,6 +44,7 @@
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-native": "^5.0.0",
+    "expo-doctor": "^1.20.1",
     "globals": "^16.5.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.67.0"
@@ -57,7 +58,7 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "check": "npm run typecheck && npm run lint && npm test && npx expo install --check",
-    "expo:doctor": "npx expo-doctor",
+    "expo:doctor": "expo-doctor",
     "expo:config": "expo config --type public",
     "export:android": "expo export --platform android --output-dir dist",
     "brand:assets": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/generate-brand-assets.ps1"

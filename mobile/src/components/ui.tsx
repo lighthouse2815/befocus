@@ -94,10 +94,10 @@ export function ProgressBar({ value, target, label }: { value: number; target: n
   )
 }
 
-export function InlineError({ message, onRetry }: { message: string; onRetry?: () => void }) {
+export function InlineError({ message, onRetry, title = 'Có vấn đề khi tải dữ liệu' }: { message: string; onRetry?: () => void; title?: string }) {
   return (
     <Surface accessible accessibilityRole="alert" style={styles.errorSurface}>
-      <Text style={styles.errorTitle}>Có vấn đề khi tải dữ liệu</Text>
+      <Text style={styles.errorTitle}>{title}</Text>
       <Text style={styles.errorBody}>{message}</Text>
       {onRetry ? <Button label="Thử lại" variant="secondary" onPress={onRetry} /> : null}
     </Surface>
