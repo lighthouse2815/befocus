@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { Redirect, Tabs } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors, iconSizes, typography } from '@/constants/theme'
 import { useAuthStore } from '@/store/authStore'
 
@@ -16,6 +17,7 @@ const icons: Record<string, { active: IconName; idle: IconName }> = {
 
 export default function TabLayout() {
   const status = useAuthStore((state) => state.status)
+  const insets = useSafeAreaInsets()
   if (status === 'anonymous') return <Redirect href="/login" />
 
   return (
@@ -26,7 +28,14 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.inkSoft,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: { ...typography.small, fontSize: 11 },
-        tabBarStyle: { backgroundColor: colors.paperRaised, borderTopColor: colors.line, borderTopWidth: 1, minHeight: 66, paddingTop: 6 },
+        tabBarStyle: {
+          backgroundColor: colors.paperRaised,
+          borderTopColor: colors.line,
+          borderTopWidth: 1,
+          height: 66 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: Math.max(insets.bottom, 6),
+        },
         tabBarIcon: ({ focused, color }) => {
           const names = icons[route.name] ?? icons.index!
           return <Ionicons name={focused ? names.active : names.idle} size={iconSizes.tab} color={color} />

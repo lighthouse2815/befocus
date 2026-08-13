@@ -17,6 +17,9 @@
     },
     "android": {
       "package": "com.lighthouse2815.focusflow",
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#f6f5f0",
         "foregroundImage": "./assets/android-icon-foreground.png",

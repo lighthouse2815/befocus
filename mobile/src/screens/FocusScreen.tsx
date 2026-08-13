@@ -38,6 +38,7 @@ export function FocusScreen() {
   const [projectId, setProjectId] = useState('')
   const [taskId, setTaskId] = useState('')
   const [formError, setFormError] = useState('')
+  const [actionError, setActionError] = useState('')
 
   const activeQuery = useQuery({ queryKey: focusKeys.active, queryFn: focusService.active })
   const settings = useQuery({ queryKey: settingsKeys.settings, queryFn: settingsService.get })
@@ -75,27 +76,41 @@ export function FocusScreen() {
     onSuccess: async (started) => { setFormError(''); await syncSession(started) },
     onError: (error) => setFormError(error instanceof Error && error.message === 'DURATION_VALIDATION' ? 'Thời lượng phải từ 1 đến 240 phút.' : getApiError(error, 'Không thể bắt đầu phiên.')),
   })
-  const pause = useMutation({ mutationFn: (id: string) => focusService.pause(id), onSuccess: syncSession })
-  const resume = useMutation({ mutationFn: (id: string) => focusService.resume(id), onSuccess: syncSession })
+  const pause = useMutation({
+    mutationFn: (id: string) => focusService.pause(id),
+    onMutate: () => setActionError(''),
+    onSuccess: async (next) => { setActionError(''); await syncSession(next) },
+    onError: (error) => setActionError(getApiError(error, 'Không thể tạm dừng phiên. Kiểm tra kết nối rồi thử lại.')),
+  })
+  const resume = useMutation({
+    mutationFn: (id: string) => focusService.resume(id),
+    onMutate: () => setActionError(''),
+    onSuccess: async (next) => { setActionError(''); await syncSession(next) },
+    onError: (error) => setActionError(getApiError(error, 'Không thể tiếp tục phiên. Kiểm tra kết nối rồi thử lại.')),
+  })
   const complete = useMutation({
     mutationFn: (id: string) => focusService.complete(id),
+    onMutate: () => setActionError(''),
     onSuccess: async (completed) => {
+      setActionError('')
       const config = settings.data ?? { defaultBreakMinutes: 5, longBreakMinutes: 15, sessionsBeforeLongBreak: 4 }
       queryClient.setQueryData(focusKeys.active, null)
       await completeFocus(completed.id, config.defaultBreakMinutes, config.longBreakMinutes, config.sessionsBeforeLongBreak)
       await invalidateAfterSession()
     },
-    onError: (error) => setFormError(getApiError(error, 'Chưa thể xác nhận phiên đã hoàn thành. Timer vẫn được giữ lại.')),
+    onError: (error) => setActionError(getApiError(error, 'Chưa thể xác nhận phiên đã hoàn thành. Timer vẫn được giữ lại.')),
   })
   const cancel = useMutation({
     mutationFn: (id: string) => focusService.cancel(id),
-    onSuccess: async () => { await syncSession(null); await invalidateAfterSession() },
-    onError: (error) => setFormError(getApiError(error, 'Không thể hủy phiên.')),
+    onMutate: () => setActionError(''),
+    onSuccess: async () => { setActionError(''); await syncSession(null); await invalidateAfterSession() },
+    onError: (error) => setActionError(getApiError(error, 'Không thể hủy phiên. Kiểm tra kết nối rồi thử lại.')),
   })
   const interruption = useMutation({
     mutationFn: ({ id, kind }: { id: string; kind: InterruptionKind }) => focusService.addInterruption(id, { kind, note: '' }),
-    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: focusKeys.active }) },
-    onError: (error) => setFormError(getApiError(error, 'Không thể ghi nhận gián đoạn.')),
+    onMutate: () => setActionError(''),
+    onSuccess: async () => { setActionError(''); await queryClient.invalidateQueries({ queryKey: focusKeys.active }) },
+    onError: (error) => setActionError(getApiError(error, 'Không thể ghi nhận gián đoạn. Kiểm tra kết nối rồi thử lại.')),
   })
 
   const durationHabits = useMemo(() => (habits.data ?? []).filter((habit) => habit.type === 'DURATION' && habit.scheduledToday && !habit.archivedAt), [habits.data])
@@ -163,6 +178,7 @@ export function FocusScreen() {
       )}
 
       {activeQuery.error ? <InlineError message={getApiError(activeQuery.error)} onRetry={() => void activeQuery.refetch()} /> : null}
+      {session && actionError ? <InlineError title="Chưa thể cập nhật phiên" message={actionError} /> : null}
       {session && completionError ? <InlineError title="Chưa thể hoàn thành phiên" message={completionError} onRetry={retryCompletion} /> : null}
       {recent.data?.length ? (
         <View style={styles.section}>

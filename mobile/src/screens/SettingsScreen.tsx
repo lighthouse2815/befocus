@@ -10,9 +10,10 @@ import { RouteHeader } from '@/components/RouteHeader'
 import { Button, InlineError, LoadingBlock, SectionHeader, Surface, TextField } from '@/components/ui'
 import { colors, spacing, typography } from '@/constants/theme'
 import { Screen } from '@/layouts/Screen'
+import { useNotificationPermission } from '@/hooks/useNotificationPermission'
 import { getApiError } from '@/services/apiClient'
 import { authService } from '@/services/authService'
-import { notificationService, type LocalNotificationPermission } from '@/services/notificationService'
+import { notificationService } from '@/services/notificationService'
 import { settingsKeys, settingsService } from '@/services/settingsService'
 import { userService } from '@/services/userService'
 import { useAuthStore } from '@/store/authStore'
@@ -145,16 +146,7 @@ function NotificationsForm({ settings, preferences }: { settings: Settings; pref
   const queryClient = useQueryClient()
   const syncError = useNotificationStore((state) => state.syncError)
   const setSyncError = useNotificationStore((state) => state.setSyncError)
-  const [permission, setPermission] = React.useState<LocalNotificationPermission>('undetermined')
-  const [permissionLoading, setPermissionLoading] = React.useState(true)
-  React.useEffect(() => {
-    let active = true
-    void notificationService.permission()
-      .then((status) => { if (active) setPermission(status) })
-      .catch(() => { if (active) setSyncError('Không thể đọc quyền thông báo của thiết bị.') })
-      .finally(() => { if (active) setPermissionLoading(false) })
-    return () => { active = false }
-  }, [setSyncError])
+  const { permission, loading: permissionLoading, request } = useNotificationPermission(setSyncError)
   const mutation = useMutation({
     mutationFn: async (enabled: boolean) => {
       const [updatedSettings, updatedPreferences] = await Promise.all([
@@ -170,17 +162,6 @@ function NotificationsForm({ settings, preferences }: { settings: Settings; pref
     },
   })
   const enabled = settings.notificationsEnabled && preferences.enabled
-  const request = async () => {
-    setPermissionLoading(true)
-    try {
-      setPermission(await notificationService.requestPermission())
-      setSyncError(null)
-    } catch {
-      setSyncError('Không thể yêu cầu quyền thông báo. Hãy kiểm tra cài đặt hệ thống.')
-    } finally {
-      setPermissionLoading(false)
-    }
-  }
   const permissionText = permission === 'granted' ? 'Đã được hệ điều hành cho phép' : permission === 'denied' ? 'Đã bị chặn trong cài đặt thiết bị' : permission === 'unsupported' ? 'Không hỗ trợ trên nền tảng web' : 'Chưa hỏi quyền trên thiết bị này'
   return (
     <Surface style={styles.formSurface}>
