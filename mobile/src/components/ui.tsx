@@ -53,7 +53,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
         ref={ref}
         accessibilityLabel={label}
         accessibilityHint={hint}
-        accessibilityState={{ disabled: !props.editable }}
+        accessibilityState={{ disabled: props.editable === false }}
         aria-describedby={errorId}
         placeholderTextColor={colors.inkSoft}
         selectionColor={colors.moss}

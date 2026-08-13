@@ -1,6 +1,7 @@
 import { loginSchema } from './LoginScreen'
 import { registerSchema } from './RegisterScreen'
 import { pomodoroSchema, profileSchema } from './SettingsScreen'
+import { defaultUnitForHabitType } from './HabitFormScreen'
 
 describe('mobile form validation', () => {
   it('rejects malformed authentication input', () => {
@@ -13,5 +14,11 @@ describe('mobile form validation', () => {
     expect(profileSchema.safeParse({ name: 'An Nguyen', timezone: 'Not/A_Timezone' }).success).toBe(false)
     expect(pomodoroSchema.safeParse({ defaultFocusMinutes: '25', defaultBreakMinutes: '5', longBreakMinutes: '15', sessionsBeforeLongBreak: '4' }).success).toBe(true)
     expect(pomodoroSchema.safeParse({ defaultFocusMinutes: '0', defaultBreakMinutes: '121', longBreakMinutes: '15', sessionsBeforeLongBreak: '4' }).success).toBe(false)
+  })
+
+  it('uses mobile-friendly default units when the habit type changes', () => {
+    expect(defaultUnitForHabitType('BOOLEAN')).toBe('lần')
+    expect(defaultUnitForHabitType('COUNT')).toBe('lần')
+    expect(defaultUnitForHabitType('DURATION')).toBe('phút')
   })
 })

@@ -39,6 +39,10 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+export function defaultUnitForHabitType(type: HabitType) {
+  return type === 'DURATION' ? 'phút' : 'lần'
+}
+
 const weekdayOptions = [
   { value: 1, label: 'T2' }, { value: 2, label: 'T3' }, { value: 3, label: 'T4' },
   { value: 4, label: 'T5' }, { value: 5, label: 'T6' }, { value: 6, label: 'T7' }, { value: 7, label: 'CN' },
@@ -84,7 +88,7 @@ export function HabitFormScreen({ id }: { id?: string }) {
     name: '', description: '', type: 'BOOLEAN', targetValue: '1', unit: 'lần', scheduleType: 'DAILY',
     weekdays: [1, 3, 5], timesPerWeek: '3', intervalDays: '2', scheduleStartDate: today, reminderTime: '', color: 'moss',
   }), [today])
-  const { control, handleSubmit, reset, setError, watch, formState: { errors } } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: defaults })
+  const { control, handleSubmit, reset, setError, setValue, watch, formState: { errors } } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: defaults })
   const type = watch('type')
   const scheduleType = watch('scheduleType')
 
@@ -161,7 +165,10 @@ export function HabitFormScreen({ id }: { id?: string }) {
       <View style={styles.section}>
         <SectionHeader eyebrow="02" title="Đo tiến độ thế nào?" />
         <Controller control={control} name="type" render={({ field: { onChange, value } }) => (
-          <OptionGroup<HabitType> value={value} onChange={onChange} options={[
+          <OptionGroup<HabitType> value={value} onChange={(nextType) => {
+            onChange(nextType)
+            setValue('unit', defaultUnitForHabitType(nextType), { shouldDirty: true, shouldValidate: true })
+          }} options={[
             { value: 'BOOLEAN', label: 'Có / Không' }, { value: 'COUNT', label: 'Số lượng' }, { value: 'DURATION', label: 'Thời lượng' },
           ]} />
         )} />
