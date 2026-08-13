@@ -38,8 +38,8 @@ export function FocusSessionSync() {
 
   useEffect(() => {
     if (!query.isSuccess) return
-    if (query.data) void setSession(query.data)
-    else if (phase === 'FOCUS') void setSession(null)
+    if (query.data && completing.current !== query.data.id) void setSession(query.data)
+    else if (phase === 'FOCUS' && completing.current === null) void setSession(null)
   }, [phase, query.data, query.isSuccess, setSession])
 
   useEffect(() => {

@@ -16,13 +16,13 @@ Ngày rà soát: 2026-08-13. Tài liệu này đối chiếu phạm vi M1–M11 
 | M1 | Expo SDK 57, React Native/TypeScript, Expo Router, 5 tab và nested routes; provider trung tâm cho Query, lifecycle timer, day boundary và notification | Đạt bằng mã nguồn/tự động |
 | M2 | Register/login/refresh/logout/current user; native token pair lưu bằng SecureStore `WHEN_UNLOCKED_THIS_DEVICE_ONLY`; logout luôn dọn token, timer, notification và query cache | Đạt bằng mã nguồn/tự động và Android thật |
 | M3 | Today lấy dashboard, habits và project/task từ REST API; trạng thái loading/empty/error/offline; không seed hoặc dựng tiến độ cục bộ | Đạt bằng mã nguồn/tự động |
-| M4 | Habit list/detail/create/edit; Boolean, Count, Duration; schedule DAILY/WEEKDAYS/INTERVAL/TIMES_PER_WEEK; heatmap, streak và optimistic UX chỉ khi mutation được server xác nhận | Đạt bằng mã nguồn/tự động; Android thật đạt CRUD chính và Duration sync, còn gate undo/decrement/midnight |
+| M4 | Habit list/detail/create/edit; Boolean, Count, Duration; schedule DAILY/WEEKDAYS/INTERVAL/TIMES_PER_WEEK; heatmap, streak và optimistic UX chỉ khi mutation được server xác nhận | Đạt bằng mã nguồn/tự động và Android thật; chỉ chưa ép chạy quan sát đúng thời khắc qua nửa đêm |
 | M5 | Focus start/pause/resume/complete/cancel, habit/project/task link, server timestamp là nguồn sự thật; khôi phục sau restart/foreground/reconnect; tự complete toàn cục và retry khi sync lỗi | Đạt bằng mã nguồn/tự động và Android thật |
-| M6 | Project CRUD/archive, task create/edit/complete và mở Focus với liên kết có sẵn | Đạt bằng mã nguồn/tự động; Android thật đạt create/edit/link, còn gate complete/archive đầy đủ |
-| M7 | Local notification cho focus/break/habit; reschedule/cancel theo lifecycle; xử lý profile IANA timezone, interval và day-boundary; quyền chỉ xin sau hành động rõ ràng của người dùng | Focus notification, permission lifecycle, exact timing, tap route và cancellation đạt trên Android thật; break/habit delivery còn gate thiết bị |
+| M6 | Project CRUD/archive, task create/edit/complete và mở Focus với liên kết có sẵn | Đạt bằng mã nguồn/tự động và Android thật, gồm task complete và project archive sau refresh |
+| M7 | Local notification cho focus/break/habit; reschedule/cancel theo lifecycle; xử lý profile IANA timezone, interval và day-boundary; quyền chỉ xin sau hành động rõ ràng của người dùng | Focus, break và habit DAILY/WEEKDAYS notification đều đạt exact delivery/tap route trên Android thật, gồm một ca màn hình khóa |
 | M8 | Focus today/current week/selected range, habit completion và interruption trend đều lấy hoặc suy ra từ response backend; không tạo insight giả | Đạt bằng mã nguồn/tự động |
-| M9 | Safe area, bàn phím/form validation, loading/empty/error/offline, touch target, accessibility labels, narrow layout và controlled font scaling | Font scale 1.3, safe-area tab bar và keyboard đạt trên Android thật; TalkBack/VoiceOver còn gate |
-| M10 | Ma trận cài app, auth restore, background/lock/foreground, notification delivery/tap, offline/reconnect, accessibility và keyboard trên Android thật | Checklist Android tối thiểu đạt; các dòng `Blocked` được ghi rõ, không tuyên bố iOS |
+| M9 | Safe area, bàn phím/form validation, loading/empty/error/offline, touch target, accessibility labels, narrow layout và controlled font scaling | Font scale 1.3, safe-area tab bar, keyboard và Samsung TalkBack cơ bản đạt trên Android thật; không tuyên bố VoiceOver |
+| M10 | Ma trận cài app, auth restore, background/lock/foreground, notification delivery/tap, offline/reconnect, accessibility và keyboard trên Android thật | Android device verified; chỉ còn quan sát mở rộng đúng thời khắc qua nửa đêm, không tuyên bố iOS |
 | M11 | README/runbook, architecture, EAS profiles, owned icon/splash, Android/iOS Hermes export, CI mobile gate, secret/dependency review | Đạt bằng mã nguồn/tự động; signed EAS build chờ credential ngoài |
 
 ## Bằng chứng trong repository
@@ -69,10 +69,16 @@ npm audit --omit=dev
 - Focus alarm yêu cầu `08:47:53.148` được Android dispatch lúc `08:47:53.149`; notification HIGH có sound/vibrate xuất hiện trong khay và tap mở đúng Focus/short break.
 - Active session đã qua background, lock/unlock, force-stop/reopen, pause/resume, mất/kết nối lại API và manual complete mà không tạo duplicate. Offline mutation không đổi state giả và hiện lỗi tiếng Việt có thể hành động.
 - Font scale thiết bị được tăng từ `1.0` lên `1.3`, kiểm Today/Focus/Settings, rồi khôi phục chính xác `1.0`. Tab bar được sửa để cộng `insets.bottom` và kiểm lại trên hierarchy vật lý.
+- Boolean `QA_Boolean` complete/undo cập nhật streak `1 → 0`; Count `QA_Count` chạy `0 → 1 → 0` và không thể giảm dưới zero. `QA_Project`/`QA_Task` đã qua task complete, project archive và refresh danh sách.
+- Short break được force-stop/reopen từ `00:58` về `00:30` trong cùng pha, xác nhận khôi phục bằng timestamp thay vì bộ đếm cục bộ.
+- Với màn hình khóa, break broadcast lúc `09:47:56.944`, notification được đăng khoảng `09:47:58.459`, hiện đúng title/body và tap mở Focus.
+- Habit reminder DAILY phát lúc `09:52:00.004`; WEEKDAYS chỉ chọn Thứ Năm phát lúc `10:03:00.001`. Notification DAILY tap mở đúng `QA_Boolean` Habit Detail.
+- Samsung TalkBack được bind thật với touch exploration và focus indicator trên Settings/Habit Detail. Không cấp quyền quản lý cuộc gọi; sau QA đã khôi phục font `1.0`, TalkBack/accessibility/touch exploration về tắt, tắt notification preference và xóa toàn bộ native scheduled notification/alarm thử nghiệm.
+- Global focus completion đã được chặn race với active-query reconciliation; integration test liên quan đạt 10/10 lượt cô lập liên tiếp, sau đó toàn bộ `npm run check` đạt 50/50 tests.
 
 ## Release gates còn mở
 
-1. Đóng các dòng `Blocked` còn lại trong `docs/PHYSICAL_DEVICE_TEST.md`: Boolean undo, Count decrement/zero, midnight schedule, Project/Task complete/archive, break restore, break notification, habit DAILY/WEEKDAYS notification và TalkBack. Notification timing khi màn hình khóa vẫn là release gate riêng chưa đánh dấu.
+1. Nếu cần mức quan sát mở rộng, chạy thêm ca habit/heatmap đúng thời khắc qua nửa đêm trên thiết bị dành riêng cho QA. Logic timezone/day-boundary đã có automated tests; lượt này không đổi đồng hồ hệ thống trên điện thoại của người dùng và đây không phải lỗi Critical/High đã biết.
 2. Nếu phát hành iOS, lặp lại toàn bộ case native trên iPhone/iPad thật; không suy diễn từ Android hoặc iOS export.
 3. Tạo signed EAS artifact bằng Expo account/credential của release owner, sau đó cài đúng artifact đó để làm final smoke. Repository chỉ cung cấp cấu hình; credential không được commit.
 4. Theo dõi và cập nhật dependency line Expo/Metro khi có bản vá tương thích cho các advisory build-tool transitive đã ghi trong `docs/SECURITY_REVIEW.md`.
