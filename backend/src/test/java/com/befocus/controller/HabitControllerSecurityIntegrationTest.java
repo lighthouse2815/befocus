@@ -83,7 +83,8 @@ class HabitControllerSecurityIntegrationTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.errors.name").exists())
-                .andExpect(jsonPath("$.errors.targetValue").exists());
+                .andExpect(jsonPath("$.message").value("Vui lòng kiểm tra các trường được đánh dấu."))
+                .andExpect(jsonPath("$.errors.name").value("Không được để trống."))
+                .andExpect(jsonPath("$.errors.targetValue").value("Giá trị nằm ngoài phạm vi cho phép."));
     }
 }

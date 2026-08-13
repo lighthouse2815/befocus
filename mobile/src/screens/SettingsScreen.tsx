@@ -30,7 +30,7 @@ export const profileSchema = z.object({
     } catch {
       return false
     }
-  }, 'Dùng timezone IANA hợp lệ, ví dụ Asia/Ho_Chi_Minh.'),
+  }, 'Dùng múi giờ IANA hợp lệ, ví dụ Asia/Ho_Chi_Minh.'),
 })
 
 export const pomodoroSchema = z.object({
@@ -66,7 +66,7 @@ function ProfileForm({ user }: { user: User }) {
       form.reset({ name: updated.name, timezone: updated.timezone })
     },
   })
-  const timezones = [...commonTimezones.map((value) => ({ value, label: value.replaceAll('_', ' ') })), { value: '__custom__', label: 'Timezone IANA khác' }]
+  const timezones = [...commonTimezones.map((value) => ({ value, label: value.replaceAll('_', ' ') })), { value: '__custom__', label: 'Múi giờ IANA khác' }]
   return (
     <Surface style={styles.formSurface}>
       <SectionHeader eyebrow="Tài khoản" title="Hồ sơ" />
@@ -76,7 +76,7 @@ function ProfileForm({ user }: { user: User }) {
           if (value === '__custom__') setCustomTimezone(true)
           else { setCustomTimezone(false); field.onChange(value) }
         }} />
-        {customTimezone ? <TextField label="Timezone IANA" value={field.value} onBlur={field.onBlur} onChangeText={field.onChange} autoCapitalize="none" autoCorrect={false} hint="Ví dụ: Europe/Paris" error={fieldState.error?.message} /> : fieldState.error ? <Text accessibilityRole="alert" style={styles.error}>{fieldState.error.message}</Text> : null}
+        {customTimezone ? <TextField label="Múi giờ IANA" value={field.value} onBlur={field.onBlur} onChangeText={field.onChange} autoCapitalize="none" autoCorrect={false} hint="Ví dụ: Europe/Paris" error={fieldState.error?.message} /> : fieldState.error ? <Text accessibilityRole="alert" style={styles.error}>{fieldState.error.message}</Text> : null}
       </View>} />
       {mutation.error ? <Text accessibilityRole="alert" style={styles.error}>{getApiError(mutation.error, 'Không thể lưu hồ sơ.')}</Text> : null}
       {mutation.isSuccess && !form.formState.isDirty ? <Text accessibilityLiveRegion="polite" style={styles.success}>Đã lưu hồ sơ.</Text> : null}
@@ -166,14 +166,14 @@ function NotificationsForm({ settings, preferences }: { settings: Settings; pref
   return (
     <Surface style={styles.formSurface}>
       <SectionHeader eyebrow="Nhắc đúng lúc" title="Thông báo" />
-      <ToggleRow label="Thông báo FocusFlow" description="Cho phép app lên lịch kết thúc phiên, giờ nghỉ và reminder thói quen." value={enabled} disabled={mutation.isPending} onChange={(value) => mutation.mutate(value)} />
+      <ToggleRow label="Thông báo FocusFlow" description="Cho phép ứng dụng lên lịch kết thúc phiên, giờ nghỉ và lời nhắc thói quen." value={enabled} disabled={mutation.isPending} onChange={(value) => mutation.mutate(value)} />
       <View style={styles.permissionBox}>
         <Text style={styles.permissionLabel}>Quyền trên thiết bị</Text>
         <Text style={styles.permissionValue}>{permissionLoading ? 'Đang kiểm tra…' : permissionText}</Text>
         {permission === 'undetermined' ? <Button label="Cho phép trên thiết bị" variant="secondary" loading={permissionLoading} onPress={() => void request()} /> : null}
         {permission === 'denied' ? <Button label="Mở cài đặt hệ thống" variant="secondary" onPress={() => void Linking.openSettings().catch(() => setSyncError('Không thể mở cài đặt hệ thống trên thiết bị này.'))} /> : null}
       </View>
-      <Text style={styles.note}>FocusFlow chỉ xin quyền khi bạn bấm nút. Tắt công tắc sẽ huỷ các lịch cục bộ do app đã tạo.</Text>
+      <Text style={styles.note}>FocusFlow chỉ xin quyền khi bạn bấm nút. Tắt công tắc sẽ hủy các lịch cục bộ do ứng dụng đã tạo.</Text>
       {syncError ? <Text accessibilityRole="alert" style={styles.error}>{syncError}</Text> : null}
       {mutation.error ? <Text accessibilityRole="alert" style={styles.error}>{getApiError(mutation.error, 'Không thể cập nhật thông báo.')}</Text> : null}
     </Surface>
@@ -200,7 +200,7 @@ function AccountActions() {
   return (
     <View style={styles.accountActions}>
       <SectionHeader eyebrow="Phiên đăng nhập" title="Tài khoản" />
-      <Button label="Đăng xuất" variant="danger" loading={mutation.isPending} onPress={() => Alert.alert('Đăng xuất khỏi FocusFlow?', 'Token lưu an toàn và dữ liệu timer cục bộ sẽ được xoá khỏi thiết bị này.', [{ text: 'Ở lại', style: 'cancel' }, { text: 'Đăng xuất', style: 'destructive', onPress: () => mutation.mutate() }])} />
+      <Button label="Đăng xuất" variant="danger" loading={mutation.isPending} onPress={() => Alert.alert('Đăng xuất khỏi FocusFlow?', 'Phiên đăng nhập và dữ liệu bộ đếm thời gian cục bộ sẽ được xóa khỏi thiết bị này.', [{ text: 'Ở lại', style: 'cancel' }, { text: 'Đăng xuất', style: 'destructive', onPress: () => mutation.mutate() }])} />
       {mutation.error ? <Text accessibilityRole="alert" style={styles.error}>{getApiError(mutation.error, 'Không thể đăng xuất.')}</Text> : null}
     </View>
   )
@@ -214,7 +214,7 @@ export function SettingsScreen() {
   return (
     <Screen>
       <RouteHeader title="Cài đặt" />
-      <View style={styles.intro}><Text style={styles.eyebrow}>Không gian của bạn</Text><Text style={styles.title}>Cấu hình FocusFlow</Text><Text style={styles.subtitle}>Hồ sơ được đồng bộ với server; quyền thông báo thuộc riêng thiết bị này.</Text></View>
+      <View style={styles.intro}><Text style={styles.eyebrow}>Không gian của bạn</Text><Text style={styles.title}>Cấu hình FocusFlow</Text><Text style={styles.subtitle}>Hồ sơ được đồng bộ với máy chủ; quyền thông báo thuộc riêng thiết bị này.</Text></View>
       {loading ? <LoadingBlock label="Đang tải cài đặt" rows={5} /> : null}
       {settings.error ? <InlineError message={getApiError(settings.error, 'Không thể tải cài đặt.')} onRetry={() => void settings.refetch()} /> : null}
       {preferences.error ? <InlineError message={getApiError(preferences.error, 'Không thể tải tùy chọn thông báo.')} onRetry={() => void preferences.refetch()} /> : null}
@@ -222,7 +222,7 @@ export function SettingsScreen() {
       {settings.data ? <PomodoroForm key={`${settings.data.defaultFocusMinutes}-${settings.data.defaultBreakMinutes}-${settings.data.longBreakMinutes}-${settings.data.sessionsBeforeLongBreak}`} settings={settings.data} /> : null}
       {settings.data && preferences.data ? <NotificationsForm settings={settings.data} preferences={preferences.data} /> : null}
       <AccountActions />
-      <Text style={styles.buildNote}>FocusFlow Mobile · v1.0.0{Platform.OS === 'web' ? ' · web preview' : ''}</Text>
+      <Text style={styles.buildNote}>FocusFlow cho điện thoại · v1.0.0{Platform.OS === 'web' ? ' · bản xem trước trên web' : ''}</Text>
     </Screen>
   )
 }

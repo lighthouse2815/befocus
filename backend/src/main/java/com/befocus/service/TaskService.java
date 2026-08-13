@@ -74,7 +74,7 @@ public class TaskService {
 
     private Task require(UUID userId, UUID taskId) {
         return taskRepository.findByIdAndUserId(taskId, userId)
-                .orElseThrow(() -> ApiException.notFound("Task was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy công việc."));
     }
 
     private void apply(Task task, TaskRequest request) {

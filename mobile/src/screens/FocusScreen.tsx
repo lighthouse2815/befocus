@@ -98,7 +98,7 @@ export function FocusScreen() {
       await completeFocus(completed.id, config.defaultBreakMinutes, config.longBreakMinutes, config.sessionsBeforeLongBreak)
       await invalidateAfterSession()
     },
-    onError: (error) => setActionError(getApiError(error, 'Chưa thể xác nhận phiên đã hoàn thành. Timer vẫn được giữ lại.')),
+    onError: (error) => setActionError(getApiError(error, 'Chưa thể xác nhận phiên đã hoàn thành. Bộ đếm thời gian vẫn được giữ lại.')),
   })
   const cancel = useMutation({
     mutationFn: (id: string) => focusService.cancel(id),
@@ -137,7 +137,7 @@ export function FocusScreen() {
   return (
     <Screen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void Promise.all([activeQuery.refetch(), habits.refetch(), projects.refetch(), recent.refetch()])} tintColor={colors.moss} />}>
       <AppHeader />
-      <View style={styles.timerIntro}><Text style={styles.eyebrow}>{session ? 'Giữ nhịp' : 'Một việc một lúc'}</Text><Text style={styles.title}>Tập trung</Text><Text style={styles.subtitle}>{session ? 'Timer được dựng lại từ timestamp server, kể cả sau khi khóa màn hình.' : 'Chọn ngữ cảnh vừa đủ rồi bắt đầu.'}</Text></View>
+      <View style={styles.timerIntro}><Text style={styles.eyebrow}>{session ? 'Giữ nhịp' : 'Một việc một lúc'}</Text><Text style={styles.title}>Tập trung</Text><Text style={styles.subtitle}>{session ? 'Thời gian còn lại được đồng bộ từ máy chủ, kể cả sau khi khóa màn hình.' : 'Chọn ngữ cảnh vừa đủ rồi bắt đầu.'}</Text></View>
 
       {!session && (settings.isPending || habits.isPending || projects.isPending) ? <LoadingBlock label="Đang chuẩn bị ngữ cảnh phiên" rows={2} /> : null}
 

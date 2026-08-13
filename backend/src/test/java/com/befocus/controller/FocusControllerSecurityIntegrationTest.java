@@ -52,7 +52,8 @@ class FocusControllerSecurityIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("Bạn cần đăng nhập để tiếp tục."));
 
         String sessionId = mockMvc.perform(post("/api/v1/focus-sessions")
                         .header("Authorization", "Bearer " + owner.accessToken())
@@ -80,7 +81,8 @@ class FocusControllerSecurityIntegrationTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.errors.plannedDurationMinutes").exists());
+                .andExpect(jsonPath("$.message").value("Vui lòng kiểm tra các trường được đánh dấu."))
+                .andExpect(jsonPath("$.errors.plannedDurationMinutes").value("Giá trị nằm ngoài phạm vi cho phép."));
     }
 
     @Test

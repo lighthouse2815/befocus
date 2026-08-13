@@ -123,6 +123,6 @@ public class MetricService {
     }
     private User lockUser(User user) {
         return userRepository.findByIdForUpdate(user.getId())
-                .orElseThrow(() -> ApiException.unauthorized("User account no longer exists."));
+                .orElseThrow(() -> ApiException.unauthorized("Tài khoản người dùng không còn tồn tại."));
     }
 }

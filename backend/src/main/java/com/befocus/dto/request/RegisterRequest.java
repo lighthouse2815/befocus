@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
-        @NotBlank(message = "Name is required") @Size(max = 120, message = "Name is too long") String name,
-        @NotBlank(message = "Email is required") @Email(message = "Enter a valid email address") @Size(max = 320) String email,
-        @NotBlank(message = "Password is required") @Size(min = 8, max = 128, message = "Password must be 8-128 characters") String password) {
+        @NotBlank(message = "Tên không được để trống") @Size(max = 120, message = "Tên không được vượt quá 120 ký tự") String name,
+        @NotBlank(message = "Email không được để trống") @Email(message = "Email không đúng định dạng") @Size(max = 320, message = "Email không được vượt quá 320 ký tự") String email,
+        @NotBlank(message = "Mật khẩu không được để trống") @Size(min = 8, max = 128, message = "Mật khẩu phải có từ 8 đến 128 ký tự") String password) {
 }

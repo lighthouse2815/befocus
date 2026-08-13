@@ -35,7 +35,7 @@ public class UserService {
         try {
             ZoneId.of(request.timezone());
         } catch (DateTimeException ex) {
-            throw ApiException.validation("Timezone is invalid.", Map.of("timezone", "Use a valid IANA timezone."));
+            throw ApiException.validation("Múi giờ không hợp lệ.", Map.of("timezone", "Hãy dùng một múi giờ IANA hợp lệ."));
         }
         User user = requireUser(userId);
         user.setName(request.name().trim());
@@ -44,6 +44,6 @@ public class UserService {
     }
 
     public User requireUser(UUID userId) {
-        return userRepository.findById(userId).orElseThrow(() -> ApiException.unauthorized("User account no longer exists."));
+        return userRepository.findById(userId).orElseThrow(() -> ApiException.unauthorized("Tài khoản người dùng không còn tồn tại."));
     }
 }

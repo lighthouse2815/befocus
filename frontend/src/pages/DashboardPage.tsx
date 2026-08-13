@@ -199,7 +199,7 @@ export function DashboardPage() {
         <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold">Điều chỉnh lịch khi nhịp sống thay đổi</h2>
-            <p className="mt-1 text-sm text-ink-soft">Mục tiêu vừa sức và lịch đúng thực tế giúp streak có ý nghĩa hơn.</p>
+            <p className="mt-1 text-sm text-ink-soft">Mục tiêu vừa sức và lịch đúng thực tế giúp chuỗi ngày liên tiếp có ý nghĩa hơn.</p>
           </div>
           <Button variant="secondary" onClick={() => navigate('/habits')}>
             Quản lý thói quen

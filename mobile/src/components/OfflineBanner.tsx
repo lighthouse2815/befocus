@@ -9,7 +9,7 @@ export function OfflineBanner() {
   return (
     <View accessibilityRole="alert" style={styles.banner}>
       <Text style={styles.title}>Đang ngoại tuyến</Text>
-      <Text style={styles.body}>Dữ liệu đã tải vẫn hiển thị; thao tác cần server sẽ khả dụng khi có mạng.</Text>
+      <Text style={styles.body}>Dữ liệu đã tải vẫn hiển thị; thao tác cần máy chủ sẽ khả dụng khi có mạng.</Text>
     </View>
   )
 }

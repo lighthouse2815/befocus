@@ -88,7 +88,7 @@ export function InsightsScreen() {
             </View>
             <View style={styles.statPair}>
               <View style={styles.flatStat}><Text style={styles.statLabel}>Trung bình</Text><Text style={styles.statValue}>{focus.data.averageSessionMinutes}p</Text><Text style={styles.statDetail}>{focus.data.completionRate.toFixed(0)}% hoàn thành</Text></View>
-              <View style={styles.flatStat}><Text style={styles.statLabel}>Thói quen</Text><Text style={styles.statValue}>{habits.data.completionRate.toFixed(0)}%</Text><Text style={styles.statDetail}>{habits.data.currentStreak} ngày streak</Text></View>
+              <View style={styles.flatStat}><Text style={styles.statLabel}>Thói quen</Text><Text style={styles.statValue}>{habits.data.completionRate.toFixed(0)}%</Text><Text style={styles.statDetail}>{habits.data.currentStreak} ngày liên tiếp</Text></View>
             </View>
             <View style={styles.statPair}>
               <View style={styles.flatStat}><Text style={styles.statLabel}>Nhất quán</Text><Text style={styles.statValue}>{habits.data.consistency.toFixed(0)}%</Text><Text style={styles.statDetail}>Theo lịch đã đặt</Text></View>
@@ -105,7 +105,7 @@ export function InsightsScreen() {
 
           <View style={styles.section}>
             <SectionHeader eyebrow="Gợi ý từ dữ liệu" title="Điều đáng chú ý" />
-            {focus.data.insights.length ? focus.data.insights.map((insight) => <View key={insight} style={styles.insight}><View style={styles.insightRule} /><Text style={styles.insightText}>{insight}</Text></View>) : <EmptyState title="Chưa đủ dữ liệu" description="Hoàn thành thêm vài phiên để nhận gợi ý riêng từ backend." />}
+            {focus.data.insights.length ? focus.data.insights.map((insight) => <View key={insight} style={styles.insight}><View style={styles.insightRule} /><Text style={styles.insightText}>{insight}</Text></View>) : <EmptyState title="Chưa đủ dữ liệu" description="Hoàn thành thêm vài phiên để nhận gợi ý riêng từ máy chủ." />}
           </View>
 
           <View style={styles.section}>

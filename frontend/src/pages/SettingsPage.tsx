@@ -111,7 +111,7 @@ export function SettingsPage() {
         </section>
 
         <section aria-labelledby="timer-settings-title">
-          <div className="mb-5"><p className="section-kicker">Timer</p><h2 id="timer-settings-title" className="mt-1 text-xl font-semibold">Nhịp nghỉ và tập trung</h2></div>
+          <div className="mb-5"><p className="section-kicker">Bộ đếm thời gian</p><h2 id="timer-settings-title" className="mt-1 text-xl font-semibold">Nhịp nghỉ và tập trung</h2></div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label="Tập trung mặc định (phút)" type="number" min={1} max={240} value={form.defaultFocusMinutes} onChange={(event) => change('defaultFocusMinutes', Number(event.target.value))} />
             <Input label="Nghỉ ngắn (phút)" type="number" min={1} max={120} value={form.defaultBreakMinutes} onChange={(event) => change('defaultBreakMinutes', Number(event.target.value))} />

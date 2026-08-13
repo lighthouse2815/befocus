@@ -34,7 +34,7 @@ export function AnalyticsPage() {
       <section className="grid gap-5 border-b border-line pb-7 sm:grid-cols-2 lg:grid-cols-3" aria-label="Tổng quan phân tích">
         <Stat label="Tập trung" value={minutesLabel(focus.totalMinutes)} detail={`${focus.completedSessions} phiên hoàn thành`} />
         <Stat label="Trung bình phiên" value={`${focus.averageSessionMinutes}p`} detail={`${focus.completionRate.toFixed(0)}% tỷ lệ hoàn thành`} />
-        <Stat label="Thói quen" value={`${habits.completionRate.toFixed(0)}%`} detail={`${habits.currentStreak} ngày streak hiện tại`} />
+        <Stat label="Thói quen" value={`${habits.completionRate.toFixed(0)}%`} detail={`${habits.currentStreak} ngày liên tiếp hiện tại`} />
         <Stat label="Chuỗi dài nhất" value={habits.longestStreak} detail="Theo đúng lịch thói quen" />
         <Stat label="Độ nhất quán" value={`${habits.consistency.toFixed(0)}%`} detail="Mục tiêu đạt trên lịch đã đặt" />
         <Stat label="Gián đoạn" value={typeof focus.interruptions === 'number' ? focus.interruptions : focus.interruptions.length} detail="Trong các phiên đã chọn" />
@@ -46,7 +46,7 @@ export function AnalyticsPage() {
       </div>
 
       <section className="mt-10 border-t border-line pt-7" aria-labelledby="focus-timing-title">
-        <div className="mb-5"><p className="section-kicker">Phân bố thời gian</p><h2 id="focus-timing-title" className="mt-1 text-xl font-semibold">Khi nào bạn tập trung?</h2><p className="mt-1 text-sm text-ink-soft">Số phút được tổng hợp ở backend từ các phiên đã hoàn thành trong khoảng đã chọn.</p></div>
+        <div className="mb-5"><p className="section-kicker">Phân bố thời gian</p><h2 id="focus-timing-title" className="mt-1 text-xl font-semibold">Khi nào bạn tập trung?</h2><p className="mt-1 text-sm text-ink-soft">Số phút được máy chủ tổng hợp từ các phiên đã hoàn thành trong khoảng đã chọn.</p></div>
         <div className="grid gap-8 lg:grid-cols-2">
           <TimingChart title="Theo thứ" items={focus.byWeekday} />
           <TimingChart title="Theo giờ bắt đầu" items={focus.byHour} hourLabels />

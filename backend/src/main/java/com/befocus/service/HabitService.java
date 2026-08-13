@@ -82,7 +82,7 @@ public class HabitService {
         LocalDate rangeTo = to == null ? today : to;
         LocalDate rangeFrom = from == null ? rangeTo.minusDays(90) : from;
         if (rangeFrom.isAfter(rangeTo)) {
-            throw ApiException.validation("Date range is invalid.", Map.of("from", "from must be on or before to."));
+            throw ApiException.validation("Khoảng ngày không hợp lệ.", Map.of("from", "Ngày bắt đầu phải trước hoặc trùng ngày kết thúc."));
         }
         List<HabitEntry> visible = allEntries.stream().filter(e -> !e.getDate().isBefore(rangeFrom) && !e.getDate().isAfter(rangeTo)).toList();
         return mapper.toResponse(habit, allEntries, visible, today);
@@ -90,7 +90,7 @@ public class HabitService {
 
     @Transactional
     public HabitResponse create(UUID userId, HabitRequest request) {
-        User user = userRepository.findById(userId).orElseThrow(() -> ApiException.unauthorized("User account no longer exists."));
+        User user = userRepository.findById(userId).orElseThrow(() -> ApiException.unauthorized("Tài khoản người dùng không còn tồn tại."));
         Habit habit = new Habit();
         habit.setUser(user);
         apply(habit, request);
@@ -102,8 +102,8 @@ public class HabitService {
         Habit habit = requireForUpdate(userId, habitId);
         List<HabitEntry> entries = entryRepository.findAllByHabitIdOrderByDateAsc(habitId);
         if (!entries.isEmpty() && habit.getType() != request.type()) {
-            throw ApiException.validation("Habit type cannot change after progress has been recorded.",
-                    Map.of("type", "Delete the existing progress before changing the habit type."));
+            throw ApiException.validation("Không thể đổi loại thói quen sau khi đã ghi tiến độ.",
+                    Map.of("type", "Hãy xóa tiến độ hiện có trước khi đổi loại thói quen."));
         }
         BigDecimal previousTarget = habit.getTargetValue();
         apply(habit, request);
@@ -146,21 +146,21 @@ public class HabitService {
     public HabitEntryResponse upsertEntry(UUID userId, UUID habitId, LocalDate date, HabitEntryRequest request) {
         Habit habit = requireForUpdate(userId, habitId);
         if (habit.isArchived()) {
-            throw ApiException.invalidState("Archived habits cannot receive new progress.");
+            throw ApiException.invalidState("Không thể ghi tiến độ mới cho thói quen đã lưu trữ.");
         }
         LocalDate today = today(userId);
         if (date.isAfter(today)) {
-            throw ApiException.validation("Entry date cannot be in the future.", Map.of("date", "Use today or a past date."));
+            throw ApiException.validation("Ngày ghi tiến độ không thể ở tương lai.", Map.of("date", "Hãy chọn hôm nay hoặc một ngày đã qua."));
         }
         if (!scheduleService.isScheduledOn(habit, date)) {
-            throw ApiException.validation("The habit is not scheduled on this date.",
-                    Map.of("date", "Choose a date included in the habit schedule."));
+            throw ApiException.validation("Thói quen không có lịch vào ngày này.",
+                    Map.of("date", "Hãy chọn một ngày có trong lịch thói quen."));
         }
         if (habit.getType() == HabitType.BOOLEAN
                 && request.value().compareTo(BigDecimal.ZERO) != 0
                 && request.value().compareTo(BigDecimal.ONE) != 0) {
-            throw ApiException.validation("Boolean habit progress must be zero or one.",
-                    Map.of("value", "Use 0 or 1 for a BOOLEAN habit."));
+            throw ApiException.validation("Tiến độ của thói quen hoàn thành phải là 0 hoặc 1.",
+                    Map.of("value", "Hãy dùng 0 hoặc 1 cho thói quen hoàn thành."));
         }
         HabitEntry entry = entryRepository.findByHabitIdAndDateForUpdate(habitId, date).orElseGet(() -> {
             HabitEntry created = new HabitEntry();
@@ -199,10 +199,10 @@ public class HabitService {
             return;
         }
         Habit habit = habitRepository.findByIdAndUserIdForUpdate(habitId, userId)
-                .orElseThrow(() -> ApiException.notFound("Habit was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy thói quen."));
         if (habit.getType() != HabitType.DURATION) {
-            throw ApiException.validation("Only duration habits can be linked to focus sessions.",
-                    Map.of("habitId", "The linked habit must have type DURATION."));
+            throw ApiException.validation("Chỉ có thể liên kết thói quen thời lượng với phiên tập trung.",
+                    Map.of("habitId", "Thói quen được liên kết phải được đo bằng thời lượng."));
         }
         HabitEntry entry = entryRepository.findByHabitIdAndDateForUpdate(habitId, date).orElseGet(() -> {
             HabitEntry created = new HabitEntry();
@@ -221,7 +221,7 @@ public class HabitService {
     }
 
     public LocalDate today(UUID userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> ApiException.unauthorized("User account no longer exists."));
+        User user = userRepository.findById(userId).orElseThrow(() -> ApiException.unauthorized("Tài khoản người dùng không còn tồn tại."));
         try {
             return clock.instant().atZone(ZoneId.of(user.getTimezone())).toLocalDate();
         } catch (DateTimeException ex) {
@@ -230,7 +230,7 @@ public class HabitService {
     }
 
     public ZoneId zone(UUID userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> ApiException.unauthorized("User account no longer exists."));
+        User user = userRepository.findById(userId).orElseThrow(() -> ApiException.unauthorized("Tài khoản người dùng không còn tồn tại."));
         try {
             return ZoneId.of(user.getTimezone());
         } catch (DateTimeException ex) {
@@ -240,12 +240,12 @@ public class HabitService {
 
     private Habit require(UUID userId, UUID habitId) {
         return habitRepository.findByIdAndUserId(habitId, userId)
-                .orElseThrow(() -> ApiException.notFound("Habit was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy thói quen."));
     }
 
     private Habit requireForUpdate(UUID userId, UUID habitId) {
         return habitRepository.findByIdAndUserIdForUpdate(habitId, userId)
-                .orElseThrow(() -> ApiException.notFound("Habit was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy thói quen."));
     }
 
     private void apply(Habit habit, HabitRequest request) {
@@ -253,25 +253,25 @@ public class HabitService {
             if (request.weekdays() == null || request.weekdays().isEmpty()
                     || request.weekdays().stream().anyMatch(day -> day == null || day < 1 || day > 7)
                     || request.weekdays().size() != new HashSet<>(request.weekdays()).size()) {
-                throw ApiException.validation("Weekdays are invalid.", Map.of("weekdays", "Use unique ISO weekdays from 1 to 7."));
+                throw ApiException.validation("Các ngày trong tuần không hợp lệ.", Map.of("weekdays", "Hãy dùng các ngày ISO không trùng nhau, từ 1 đến 7."));
             }
         }
         if (request.scheduleType() == ScheduleType.TIMES_PER_WEEK
                 && (request.timesPerWeek() == null || request.timesPerWeek() < 1 || request.timesPerWeek() > 7)) {
-            throw ApiException.validation("Times per week is invalid.", Map.of("timesPerWeek", "Use a value from 1 to 7."));
+            throw ApiException.validation("Số lần mỗi tuần không hợp lệ.", Map.of("timesPerWeek", "Hãy chọn giá trị từ 1 đến 7."));
         }
         if (request.scheduleType() == ScheduleType.INTERVAL
                 && (request.intervalDays() == null || request.intervalDays() < 2 || request.intervalDays() > 30
                         || request.scheduleStartDate() == null)) {
-            throw ApiException.validation("Interval schedule is invalid.",
-                    Map.of("intervalDays", "Use 2-30 and provide scheduleStartDate."));
+            throw ApiException.validation("Lịch lặp theo khoảng ngày không hợp lệ.",
+                    Map.of("intervalDays", "Hãy chọn từ 2 đến 30 ngày và cung cấp ngày bắt đầu lịch."));
         }
         if (request.type() == HabitType.BOOLEAN && request.targetValue().compareTo(BigDecimal.ONE) != 0) {
-            throw ApiException.validation("Boolean habits target one completion.", Map.of("targetValue", "Use 1 for BOOLEAN habits."));
+            throw ApiException.validation("Thói quen hoàn thành có mục tiêu là một lần.", Map.of("targetValue", "Hãy dùng giá trị 1 cho thói quen hoàn thành."));
         }
         String color = request.color() == null || request.color().isBlank() ? "moss" : request.color().trim().toLowerCase();
         if (!ALLOWED_COLORS.contains(color)) {
-            throw ApiException.validation("Color is not supported.", Map.of("color", "Choose one of the supported habit colors."));
+            throw ApiException.validation("Màu không được hỗ trợ.", Map.of("color", "Hãy chọn một trong các màu thói quen được hỗ trợ."));
         }
 
         habit.setName(request.name().trim());

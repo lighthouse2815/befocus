@@ -61,10 +61,10 @@ export function TodayScreen() {
           <View style={styles.focusCopy}>
             <Text style={styles.trayEyebrow}>{dashboard.data?.activeSession ? 'Phiên đang chạy' : 'Bắt đầu nhanh'}</Text>
             <Text style={styles.trayTitle}>{dashboard.data?.activeSession ? dashboard.data.activeSession.taskTitle || dashboard.data.activeSession.habitName || 'Phiên tập trung' : 'Sẵn sàng tập trung?'}</Text>
-            <Text style={styles.trayBody}>{dashboard.data?.activeSession ? `${dashboard.data.activeSession.plannedDurationMinutes} phút · mở để tiếp tục` : 'Chọn thời lượng và liên kết công việc ngay trên màn hình timer.'}</Text>
+            <Text style={styles.trayBody}>{dashboard.data?.activeSession ? `${dashboard.data.activeSession.plannedDurationMinutes} phút · mở để tiếp tục` : 'Chọn thời lượng và liên kết công việc ngay trên màn hình tập trung.'}</Text>
           </View>
           <Button
-            label={dashboard.data?.activeSession ? 'Mở timer' : 'Bắt đầu'}
+            label={dashboard.data?.activeSession ? 'Mở phiên' : 'Bắt đầu'}
             onPress={() => router.push('/(tabs)/focus')}
           />
         </Surface>
@@ -115,7 +115,7 @@ export function TodayScreen() {
           <Surface style={styles.metrics}>
             <Metric icon="timer-outline" value={`${dashboard.data.focusMinutes}`} label="phút tập trung" />
             <Metric icon="checkmark-done-outline" value={`${dashboard.data.habits.completed}/${dashboard.data.habits.total}`} label="thói quen" />
-            <Metric icon="flame-outline" value={`${dashboard.data.currentStreak}`} label="ngày streak" />
+            <Metric icon="flame-outline" value={`${dashboard.data.currentStreak}`} label="ngày liên tiếp" />
           </Surface>
         </View>
       ) : null}

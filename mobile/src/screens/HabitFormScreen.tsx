@@ -149,7 +149,7 @@ export function HabitFormScreen({ id }: { id?: string }) {
       <RouteHeader title={editing ? 'Chỉnh sửa thói quen' : 'Thói quen mới'} />
       <View style={styles.intro}>
         <Text style={styles.title}>{editing ? 'Điều chỉnh cho vừa nhịp' : 'Một việc đủ rõ để lặp lại'}</Text>
-        <Text style={styles.subtitle}>Mục tiêu và lịch được backend kiểm tra; ứng dụng chỉ giúp nhập nhanh, đúng ngữ cảnh mobile.</Text>
+        <Text style={styles.subtitle}>Mục tiêu và lịch được máy chủ kiểm tra; ứng dụng giúp bạn nhập nhanh, đúng ngữ cảnh trên điện thoại.</Text>
       </View>
 
       <View style={styles.section}>

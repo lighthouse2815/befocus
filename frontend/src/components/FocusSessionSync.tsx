@@ -41,7 +41,7 @@ export function FocusSessionSync() {
       notify(`Đã ghi nhận ${completed.actualDurationMinutes ?? 0} phút tập trung.`, 'success')
     },
     onError: () => {
-      notify('Chưa thể xác nhận phiên đã hoàn thành. Dữ liệu timer vẫn được giữ lại.', 'error')
+      notify('Chưa thể xác nhận phiên đã hoàn thành. Dữ liệu bộ đếm thời gian vẫn được giữ lại.', 'error')
     },
   })
 

@@ -73,7 +73,7 @@ public class SecurityConfig {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.setContentType("application/json");
             mapper.writeValue(response.getOutputStream(), new ErrorResponse(java.time.Instant.now(), 401,
-                    "UNAUTHORIZED", "Authentication is required.", java.util.Map.of()));
+                    "UNAUTHORIZED", "Bạn cần đăng nhập để tiếp tục.", java.util.Map.of()));
         };
     }
 
@@ -83,7 +83,7 @@ public class SecurityConfig {
             response.setStatus(HttpStatus.FORBIDDEN.value());
             response.setContentType("application/json");
             mapper.writeValue(response.getOutputStream(), new ErrorResponse(java.time.Instant.now(), 403,
-                    "FORBIDDEN", "You do not have access to this resource.", java.util.Map.of()));
+                    "FORBIDDEN", "Bạn không có quyền truy cập tài nguyên này.", java.util.Map.of()));
         };
     }
 }

@@ -87,7 +87,7 @@ public class ProjectService {
     @Transactional
     public ProjectResponse create(UUID userId, ProjectRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> ApiException.unauthorized("User account no longer exists."));
+                .orElseThrow(() -> ApiException.unauthorized("Tài khoản người dùng không còn tồn tại."));
         Project project = new Project();
         project.setUser(user);
         apply(project, request);
@@ -98,7 +98,7 @@ public class ProjectService {
     public ProjectResponse update(UUID userId, UUID projectId, ProjectRequest request) {
         Project project = requireForUpdate(userId, projectId);
         if (project.isArchived()) {
-            throw ApiException.invalidState("Archived projects cannot be edited.");
+            throw ApiException.invalidState("Không thể chỉnh sửa dự án đã lưu trữ.");
         }
         apply(project, request);
         return detail(userId, projectRepository.save(project));
@@ -116,21 +116,21 @@ public class ProjectService {
 
     public Project require(UUID userId, UUID projectId) {
         return projectRepository.findByIdAndUserId(projectId, userId)
-                .orElseThrow(() -> ApiException.notFound("Project was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy dự án."));
     }
 
     public Project requireActive(UUID userId, UUID projectId) {
         Project project = require(userId, projectId);
         if (project.isArchived()) {
-            throw ApiException.validation("Archived projects cannot receive new tasks.",
-                    Map.of("projectId", "Choose an active project."));
+            throw ApiException.validation("Không thể thêm công việc vào dự án đã lưu trữ.",
+                    Map.of("projectId", "Hãy chọn một dự án đang hoạt động."));
         }
         return project;
     }
 
     private Project requireForUpdate(UUID userId, UUID projectId) {
         return projectRepository.findByIdAndUserId(projectId, userId)
-                .orElseThrow(() -> ApiException.notFound("Project was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy dự án."));
     }
 
     private void apply(Project project, ProjectRequest request) {
@@ -139,8 +139,8 @@ public class ProjectService {
             color = project.getColor() == null ? "ink" : project.getColor();
         }
         if (!ALLOWED_COLORS.contains(color)) {
-            throw ApiException.validation("Project color is invalid.",
-                    Map.of("color", "Use one of moss, clay, amber, ocean, plum, or ink."));
+            throw ApiException.validation("Màu dự án không hợp lệ.",
+                    Map.of("color", "Hãy chọn một trong các màu được hỗ trợ."));
         }
         project.setName(request.name().trim());
         project.setDescription(normalize(request.description()));
@@ -203,7 +203,7 @@ public class ProjectService {
 
     private List<WeeklyActivityPoint> weeklyActivity(UUID userId, List<FocusSession> completed) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> ApiException.unauthorized("User account no longer exists."));
+                .orElseThrow(() -> ApiException.unauthorized("Tài khoản người dùng không còn tồn tại."));
         ZoneId zone = zone(user);
         LocalDate today = clock.instant().atZone(zone).toLocalDate();
         Map<LocalDate, Integer> values = new HashMap<>();

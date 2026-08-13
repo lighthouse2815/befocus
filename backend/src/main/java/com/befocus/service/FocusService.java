@@ -81,7 +81,7 @@ public class FocusService {
     public FocusSessionResponse start(UUID userId, FocusStartRequest request) {
         User user = lockUser(userId);
         if (!sessionRepository.findActiveByUser(userId, ACTIVE_STATUSES).isEmpty()) {
-            throw ApiException.conflict("An active focus session already exists.");
+            throw ApiException.conflict("Bạn đang có một phiên tập trung chưa kết thúc.");
         }
 
         Instant now = clock.instant();
@@ -89,16 +89,16 @@ public class FocusService {
         Task task = request.taskId() == null ? null : requireTask(userId, request.taskId());
         if (task != null) {
             if (task.getStatus() == TaskStatus.COMPLETED) {
-                throw ApiException.validation("Completed tasks cannot receive new focus sessions.",
-                        Map.of("taskId", "Choose an open task."));
+                throw ApiException.validation("Không thể thêm phiên tập trung cho công việc đã hoàn thành.",
+                        Map.of("taskId", "Hãy chọn một công việc đang mở."));
             }
             if (task.getProject().isArchived()) {
-                throw ApiException.validation("Tasks in archived projects cannot receive new focus sessions.",
-                        Map.of("taskId", "Choose a task from an active project."));
+                throw ApiException.validation("Không thể thêm phiên tập trung cho công việc thuộc dự án đã lưu trữ.",
+                        Map.of("taskId", "Hãy chọn công việc thuộc một dự án đang hoạt động."));
             }
             if (project != null && !project.getId().equals(task.getProject().getId())) {
-                throw ApiException.validation("The selected task does not belong to the selected project.",
-                        Map.of("taskId", "Choose a task from the selected project."));
+                throw ApiException.validation("Công việc đã chọn không thuộc dự án đã chọn.",
+                        Map.of("taskId", "Hãy chọn công việc thuộc dự án đã chọn."));
             }
             project = task.getProject();
         }
@@ -136,11 +136,11 @@ public class FocusService {
     public FocusSessionResponse pause(UUID userId, UUID sessionId) {
         FocusSession session = requireForUpdate(userId, sessionId);
         if (session.getStatus() != FocusStatus.RUNNING) {
-            throw ApiException.invalidState("Only a running focus session can be paused.");
+            throw ApiException.invalidState("Chỉ có thể tạm dừng phiên tập trung đang chạy.");
         }
         Instant now = clock.instant();
         if (!now.isBefore(session.getExpectedEndAt())) {
-            throw ApiException.invalidState("This focus session has reached its planned duration. Complete it instead.");
+            throw ApiException.invalidState("Phiên tập trung đã đủ thời lượng dự kiến. Hãy hoàn thành phiên.");
         }
         session.setStatus(FocusStatus.PAUSED);
         session.setPausedAt(now);
@@ -151,7 +151,7 @@ public class FocusService {
     public FocusSessionResponse resume(UUID userId, UUID sessionId) {
         FocusSession session = requireForUpdate(userId, sessionId);
         if (session.getStatus() != FocusStatus.PAUSED || session.getPausedAt() == null) {
-            throw ApiException.invalidState("Only a paused focus session can be resumed.");
+            throw ApiException.invalidState("Chỉ có thể tiếp tục phiên tập trung đang tạm dừng.");
         }
         finishPause(session, clock.instant(), true);
         session.setStatus(FocusStatus.RUNNING);
@@ -165,7 +165,7 @@ public class FocusService {
             return mapper.toResponse(session);
         }
         if (session.getStatus() == FocusStatus.CANCELLED || !ACTIVE_STATUSES.contains(session.getStatus())) {
-            throw ApiException.invalidState("Only an active focus session can be completed.");
+            throw ApiException.invalidState("Chỉ có thể hoàn thành một phiên tập trung đang hoạt động.");
         }
 
         Instant now = clock.instant();
@@ -194,7 +194,7 @@ public class FocusService {
             return mapper.toResponse(session);
         }
         if (session.getStatus() == FocusStatus.COMPLETED || !ACTIVE_STATUSES.contains(session.getStatus())) {
-            throw ApiException.invalidState("Only an active focus session can be cancelled.");
+            throw ApiException.invalidState("Chỉ có thể hủy một phiên tập trung đang hoạt động.");
         }
 
         Instant now = clock.instant();
@@ -217,7 +217,7 @@ public class FocusService {
             FocusInterruptionRequest request) {
         FocusSession session = requireForUpdate(userId, sessionId);
         if (!ACTIVE_STATUSES.contains(session.getStatus())) {
-            throw ApiException.invalidState("Interruptions can only be recorded during an active focus session.");
+            throw ApiException.invalidState("Chỉ có thể ghi gián đoạn trong một phiên tập trung đang hoạt động.");
         }
 
         Instant now = clock.instant();
@@ -233,43 +233,43 @@ public class FocusService {
 
     private User lockUser(UUID userId) {
         return userRepository.findByIdForUpdate(userId)
-                .orElseThrow(() -> ApiException.unauthorized("User account no longer exists."));
+                .orElseThrow(() -> ApiException.unauthorized("Tài khoản người dùng không còn tồn tại."));
     }
 
     private FocusSession requireForUpdate(UUID userId, UUID sessionId) {
         return sessionRepository.findByIdAndUserIdForUpdate(sessionId, userId)
-                .orElseThrow(() -> ApiException.notFound("Focus session was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy phiên tập trung."));
     }
 
     private Project requireProject(UUID userId, UUID projectId) {
         Project project = projectRepository.findByIdAndUserId(projectId, userId)
-                .orElseThrow(() -> ApiException.notFound("Project was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy dự án."));
         if (project.isArchived()) {
-            throw ApiException.validation("Archived projects cannot receive new focus sessions.",
-                    Map.of("projectId", "Choose an active project."));
+            throw ApiException.validation("Không thể thêm phiên tập trung cho dự án đã lưu trữ.",
+                    Map.of("projectId", "Hãy chọn một dự án đang hoạt động."));
         }
         return project;
     }
 
     private Task requireTask(UUID userId, UUID taskId) {
         return taskRepository.findByIdAndUserId(taskId, userId)
-                .orElseThrow(() -> ApiException.notFound("Task was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy công việc."));
     }
 
     private Habit requireLinkableHabit(User user, UUID habitId, Instant startedAt) {
         Habit habit = habitRepository.findByIdAndUserId(habitId, user.getId())
-                .orElseThrow(() -> ApiException.notFound("Habit was not found."));
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy thói quen."));
         if (habit.isArchived()) {
-            throw ApiException.validation("Archived habits cannot receive focus progress.",
-                    Map.of("habitId", "Choose an active duration habit."));
+            throw ApiException.validation("Không thể ghi tiến độ tập trung cho thói quen đã lưu trữ.",
+                    Map.of("habitId", "Hãy chọn một thói quen thời lượng đang hoạt động."));
         }
         if (habit.getType() != HabitType.DURATION) {
-            throw ApiException.validation("Only duration habits can be linked to focus sessions.",
-                    Map.of("habitId", "Choose a habit measured by duration."));
+            throw ApiException.validation("Chỉ có thể liên kết thói quen thời lượng với phiên tập trung.",
+                    Map.of("habitId", "Hãy chọn một thói quen được đo bằng thời lượng."));
         }
         if (!scheduleService.isScheduledOn(habit, localDate(user, startedAt))) {
-            throw ApiException.validation("The linked habit is not scheduled today.",
-                    Map.of("habitId", "Choose a duration habit scheduled for today."));
+            throw ApiException.validation("Thói quen được liên kết không có lịch hôm nay.",
+                    Map.of("habitId", "Hãy chọn một thói quen thời lượng có lịch hôm nay."));
         }
         return habit;
     }

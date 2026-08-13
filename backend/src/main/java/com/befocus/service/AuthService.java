@@ -53,7 +53,7 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         String email = normalizeEmail(request.email());
         if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw ApiException.conflict("An account with this email already exists.");
+            throw ApiException.conflict("Email này đã được đăng ký.");
         }
 
         User user = new User();
@@ -72,9 +72,9 @@ public class AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.email()))
-                .orElseThrow(() -> ApiException.unauthorized("Email or password is incorrect."));
+                .orElseThrow(() -> ApiException.unauthorized("Email hoặc mật khẩu không đúng."));
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw ApiException.unauthorized("Email or password is incorrect.");
+            throw ApiException.unauthorized("Email hoặc mật khẩu không đúng.");
         }
         return issueTokens(user, UUID.randomUUID());
     }
@@ -83,12 +83,12 @@ public class AuthService {
     public AuthResponse refresh(String rawToken) {
         Instant now = clock.instant();
         RefreshToken current = refreshTokenRepository.findByTokenHash(TokenUtil.sha256(rawToken))
-                .orElseThrow(() -> ApiException.unauthorized("Refresh token is invalid."));
+                .orElseThrow(() -> ApiException.unauthorized("Phiên đăng nhập không hợp lệ."));
         if (!current.isActive(now)) {
             if (current.getRevokedAt() != null && current.getReplacedByHash() != null) {
                 refreshTokenRepository.revokeFamily(current.getFamilyId(), now);
             }
-            throw ApiException.unauthorized("Refresh token is invalid or expired.");
+            throw ApiException.unauthorized("Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
         }
 
         String nextRaw = TokenUtil.randomToken();

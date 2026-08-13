@@ -13,7 +13,7 @@ public class CurrentUser {
     public UUID id() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof UUID userId)) {
-            throw ApiException.unauthorized("Authentication is required.");
+            throw ApiException.unauthorized("Bạn cần đăng nhập để tiếp tục.");
         }
         return userId;
     }

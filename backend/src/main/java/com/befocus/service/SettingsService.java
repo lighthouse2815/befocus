@@ -41,13 +41,13 @@ public class SettingsService {
         try {
             ZoneId.of(request.timezone());
         } catch (DateTimeException ex) {
-            throw ApiException.validation("Timezone is invalid.", java.util.Map.of("timezone", "Use a valid IANA timezone."));
+            throw ApiException.validation("Múi giờ không hợp lệ.", java.util.Map.of("timezone", "Hãy dùng một múi giờ IANA hợp lệ."));
         }
         Theme theme;
         try {
             theme = Theme.valueOf(request.theme().trim().toUpperCase(java.util.Locale.ROOT));
         } catch (IllegalArgumentException ex) {
-            throw ApiException.validation("Theme is invalid.", java.util.Map.of("theme", "Use light, dark, or system."));
+            throw ApiException.validation("Giao diện không hợp lệ.", java.util.Map.of("theme", "Hãy chọn sáng, tối hoặc theo hệ thống."));
         }
         user.setDefaultFocusMinutes(request.defaultFocusMinutes());
         user.setDefaultBreakMinutes(request.defaultBreakMinutes());
@@ -101,6 +101,6 @@ public class SettingsService {
     }
 
     private User user(UUID id) {
-        return userRepository.findById(id).orElseThrow(() -> ApiException.unauthorized("User account no longer exists."));
+        return userRepository.findById(id).orElseThrow(() -> ApiException.unauthorized("Tài khoản người dùng không còn tồn tại."));
     }
 }

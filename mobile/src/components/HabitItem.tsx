@@ -96,7 +96,7 @@ function HabitTitle({ habit }: { habit: Habit }) {
       <View style={[styles.dot, { backgroundColor: habitColors[habit.color] ?? colors.moss }]} />
       <View style={styles.titleText}>
         <Text style={styles.title}>{habit.name}</Text>
-        <Text style={styles.meta}>{habit.currentStreak} ngày streak · {habit.scheduleType === 'DAILY' ? 'Hằng ngày' : 'Theo lịch'}</Text>
+        <Text style={styles.meta}>{habit.currentStreak} ngày liên tiếp · {habit.scheduleType === 'DAILY' ? 'Hằng ngày' : 'Theo lịch'}</Text>
       </View>
     </>
   )

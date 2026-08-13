@@ -479,7 +479,7 @@ function ActiveFocus({
           </p>
           <p className="mt-4 text-sm text-ink-soft">
             {session.status === 'PAUSED'
-              ? 'Timer đang đứng yên. Thời gian nghỉ không bị tính vào phiên.'
+              ? 'Bộ đếm thời gian đang dừng. Thời gian nghỉ không bị tính vào phiên.'
               : 'Timestamp trên máy chủ là nguồn sự thật; bạn có thể đổi tab hoặc khóa máy.'}
           </p>
           <div className="mx-auto mt-8 max-w-xl">

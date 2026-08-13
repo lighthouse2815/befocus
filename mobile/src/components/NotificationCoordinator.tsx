@@ -84,7 +84,7 @@ export function NotificationCoordinator() {
 
   useEffect(() => {
     if (!authenticated || settings.isPending || preferences.isPending || habits.isPending) return
-    void report(notificationService.syncHabits(habits.data ?? [], enabled, timezone), 'Không thể đồng bộ reminder thói quen. Mở Settings để kiểm tra quyền.')
+    void report(notificationService.syncHabits(habits.data ?? [], enabled, timezone), 'Không thể đồng bộ lời nhắc thói quen. Mở Cài đặt để kiểm tra quyền.')
   }, [authenticated, enabled, habitSignature, habits.data, habits.isPending, preferences.isPending, report, settings.isPending, timezone])
 
   useEffect(() => {

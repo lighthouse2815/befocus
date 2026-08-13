@@ -269,14 +269,14 @@ public class AnalyticsService {
         LocalDate today = now(user);
         LocalDate start = from == null ? today.minusDays(29) : from;
         LocalDate end = to == null ? today : to;
-        if (start.isAfter(end)) throw com.befocus.exception.ApiException.validation("Date range is invalid.", Map.of("from", "from must be on or before to."));
-        if (java.time.temporal.ChronoUnit.DAYS.between(start, end) > 366) throw com.befocus.exception.ApiException.validation("Date range is too large.", Map.of("to", "Use a range of at most 366 days."));
+        if (start.isAfter(end)) throw com.befocus.exception.ApiException.validation("Khoảng ngày không hợp lệ.", Map.of("from", "Ngày bắt đầu phải trước hoặc trùng ngày kết thúc."));
+        if (java.time.temporal.ChronoUnit.DAYS.between(start, end) > 366) throw com.befocus.exception.ApiException.validation("Khoảng ngày quá dài.", Map.of("to", "Hãy chọn khoảng thời gian không quá 366 ngày."));
         return new LocalDate[] { start, end };
     }
 
     private int totalMinutes(List<FocusSession> sessions) { return sessions.stream().mapToInt(this::sessionMinutes).sum(); }
     private int sessionMinutes(FocusSession session) { return session.getActualDurationMinutes() == null ? 0 : session.getActualDurationMinutes(); }
-    private User user(UUID id) { return userRepository.findById(id).orElseThrow(() -> com.befocus.exception.ApiException.unauthorized("User account no longer exists.")); }
+    private User user(UUID id) { return userRepository.findById(id).orElseThrow(() -> com.befocus.exception.ApiException.unauthorized("Tài khoản người dùng không còn tồn tại.")); }
     private LocalDate now(User user) { return clock.instant().atZone(zone(user)).toLocalDate(); }
     private ZoneId zone(User user) { try { return ZoneId.of(user.getTimezone()); } catch (DateTimeException ex) { return ZoneId.of("UTC"); } }
     private Instant startOf(LocalDate date, ZoneId zone) { return date.atStartOfDay(zone).toInstant(); }
